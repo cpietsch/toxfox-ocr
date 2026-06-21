@@ -1,15 +1,17 @@
 # type: ignore
+import os
 import warnings
 from collections import defaultdict
 from typing import Any
 
 import cv2
-import easyocr
 import numpy as np
 import torch
 from scipy.spatial import distance_matrix
 
-from zug_toxfox import pipeline_config
+from zug_toxfox import getLogger, pipeline_config
+
+log = getLogger(__name__)
 
 # Suppress warning related to torch.load in easy_ocr
 warnings.filterwarnings("ignore", category=FutureWarning, message=".*torch.load.*weights_only=False.*")
@@ -106,9 +108,50 @@ class BoundingBoxProcessor:
 
 
 class OCR:
+    """Text detection + recognition with a pluggable engine.
+
+    The engine is chosen via the OCR_ENGINE env var (default "easyocr"). Every backend
+    normalizes its output to a list of ``[polygon, text, confidence]`` triples, so the
+    downstream reading-order clustering and token filtering are engine-agnostic. This lets
+    us benchmark alternative engines (RapidOCR / PaddleOCR / ...) as a one-line config swap
+    without rewriting the postprocessing that depends on bounding-box geometry.
+    """
+
     def __init__(self):
+        # Precedence: OCR_ENGINE env > pipeline_config.ocr.engine > "easyocr".
+        cfg_engine = pipeline_config.ocr.engine
+        self.engine = (os.environ.get("OCR_ENGINE") or (cfg_engine if isinstance(cfg_engine, str) else "easyocr")).lower()
         gpu = torch.cuda.is_available() or torch.backends.mps.is_available()
-        self.processor = easyocr.Reader(["de", "en"], gpu=gpu)
+        log.info("OCR engine: %s (gpu=%s)", self.engine, gpu)
+        self._build_backend(self.engine, gpu)
+
+    def _build_backend(self, engine: str, gpu: bool) -> None:
+        if engine == "easyocr":
+            import easyocr
+
+            self.processor = easyocr.Reader(["de", "en"], gpu=gpu)
+        elif engine == "doctr":
+            from zug_toxfox.modules.ocr_backends import DocTRBackend
+
+            cfg_reco = pipeline_config.ocr.doctr_reco
+            reco = os.environ.get("DOCTR_RECO") or (cfg_reco if isinstance(cfg_reco, str) else "crnn_vgg16_bn")
+            self.processor = DocTRBackend(reco_arch=reco)
+        elif engine == "rapidocr":
+            from zug_toxfox.modules.ocr_backends import RapidOCRBackend
+
+            self.processor = RapidOCRBackend()
+        elif engine == "paddleocr":
+            from zug_toxfox.modules.ocr_backends import PaddleOCRBackend
+
+            self.processor = PaddleOCRBackend(gpu=gpu)
+        else:
+            raise ValueError(f"Unknown OCR_ENGINE '{engine}'")  # noqa: TRY003
+
+    def _detect(self, image: np.ndarray) -> list[list[Any]]:
+        """Run detection+recognition, normalized to [polygon, text, confidence] triples."""
+        if self.engine == "easyocr":
+            return self.processor.readtext(image, paragraph=False)
+        return self.processor.readtext(image)
 
     def easyocr_to_dict(self, ocr_output: list[list[Any]], paragraph: bool = False) -> dict[str, Any]:
         """
@@ -125,6 +168,11 @@ class OCR:
         output_dict: dict[str, list[Any]] = {"text": [], "polygons": []}
         if not paragraph:
             output_dict["level"] = []
+
+        # Detectors other than EasyOCR (docTR, RapidOCR) can legitimately return zero boxes on
+        # tiny/blank crops; the reading-order clustering below assumes >=1 box, so short-circuit.
+        if not ocr_output:
+            return output_dict
 
         polygons: list[tuple[tuple[float, float], tuple[float, float]]] = []
         texts: list[str] = []
@@ -164,7 +212,7 @@ class OCR:
         return {key: [output[key][i] for i in filtered_indices] for key in output}
 
     def process_easyocr(self, image: np.ndarray):
-        output = self.processor.readtext(image, paragraph=False)
+        output = self._detect(image)
         output = self.easyocr_to_dict(ocr_output=output, paragraph=True)
         return self.get_filtered_output(output)
 

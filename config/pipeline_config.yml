@@ -12,6 +12,11 @@ preprocessing:
 
 ocr:
   bb_threshold_factor: 0.8
+  # OCR engine: easyocr | doctr | rapidocr | paddleocr. docTR (db_resnet50 + crnn_vgg16_bn,
+  # on the installed torch+cpu) measured +19.5% exact-F1 over EasyOCR on the 59-image eval set,
+  # while being ~2x faster and lighter. Override at runtime with the OCR_ENGINE env var.
+  engine: doctr
+  doctr_reco: crnn_vgg16_bn  # crnn_vgg16_bn (fast, best) | parseq (transformer, ~tie but slower)
 
 postprocessing:
   FAISSIndexer_model_name: all-MiniLM-L6-v2
@@ -19,6 +24,11 @@ postprocessing:
   typo_threshold: 0.8
   misspelling_set: ["0il", "oi", "ol", "oill", "oll", "oli"]
   detection_type: both
+  # Ingredient matcher: faiss (dense cosine) | rapidfuzz (lexical). FAISS measured best here.
+  match_backend: faiss
+  # Word-level typo correction: faiss (semantic) | symspell (edit-distance over the INCI vocab).
+  # SymSpell added +0.012 exact-F1 and removes a transformer call path. Override with TYPO_BACKEND.
+  typo_backend: symspell
 
 evaluation:
   method: levenshtein # levenstein or exact

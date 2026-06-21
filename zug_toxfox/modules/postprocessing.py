@@ -19,8 +19,15 @@ config = pipeline_config.postprocessing
 
 class FAISSIndexer:
     def __init__(self):
-        self.model_name = config.FAISSIndexer_model_name
+        # Allow swapping the embedding model via the EMBED_MODEL env var without editing
+        # config, so a benchmark experiment is a one-line change. Falls back to config.
+        self.model_name = os.environ.get("EMBED_MODEL") or config.FAISSIndexer_model_name
         self.model = SentenceTransformer(self.model_name)
+        # A cached FAISS index is embedding-specific (different model -> different dim and
+        # vectors), so namespace the index files per model. The configured default keeps its
+        # legacy filename, so the prebuilt index ships and loads unchanged.
+        slug = re.sub(r"[^A-Za-z0-9]+", "-", self.model_name).strip("-").lower()
+        self.index_suffix = "" if self.model_name == config.FAISSIndexer_model_name else f"__{slug}"
         self.indices = {}
         self.key_tokens = {}
         self.use_gpu = faiss.get_num_gpus() > 0
@@ -61,6 +68,27 @@ class FAISSIndexer:
         result_tokens = np.array(self.key_tokens[name])[indices.flatten()]
         mask = distances.flatten() >= threshold
         return result_tokens, mask, distances
+
+    def rapidfuzz_search(
+        self, name: str, queries: list[str], threshold: float
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Lexical nearest-neighbour over the same vocab, drop-in for ``search``.
+
+        INCI matching is an orthographic problem (OCR character errors on a fixed Latin
+        vocabulary), not a semantic one, so character-aware fuzzy similarity is a better fit
+        than dense cosine and directly optimizes the edit-distance metric the eval scores on.
+        ``threshold`` is on rapidfuzz's 0-100 scale (not cosine).
+        """
+        from rapidfuzz import fuzz, process
+
+        choices = self.key_tokens[name]
+        # WRatio blends ratio/partial/token-set, robust to length and word-order differences.
+        scores_matrix = process.cdist(queries, choices, scorer=fuzz.WRatio, workers=-1)
+        best_idx = scores_matrix.argmax(axis=1)
+        best_scores = scores_matrix[np.arange(len(queries)), best_idx]
+        result_tokens = np.array(choices, dtype=object)[best_idx]
+        mask = best_scores >= threshold
+        return result_tokens, mask, best_scores
 
 
 class TrieNode:
@@ -151,7 +179,10 @@ class Trie:
                 if n == len(text[i:]) - 1:
                     i += 1
 
-        return np.array([r.strip() for r in results]), np.array(mask)
+        # dtype=bool matters: an empty match list otherwise yields a float64 array, which
+        # blows up when used as a boolean index in get_ingredients (engines other than EasyOCR
+        # can emit tokens that wholly miss the Trie). Keep results as object for the same reason.
+        return np.array([r.strip() for r in results], dtype=object), np.array(mask, dtype=bool)
 
 
 class TokenCleaner:
@@ -159,6 +190,42 @@ class TokenCleaner:
         self.indexer = indexer
         self.typo_threshold = config.typo_threshold
         self.misspelling_set = config.misspelling_set
+
+        # Word-level typo correction backend: "faiss" (semantic) or "symspell" (Symmetric-Delete
+        # edit distance over the fixed INCI word vocab). Edit distance is the textbook fit for OCR
+        # character errors on a closed vocabulary. Precedence: TYPO_BACKEND env > config > "faiss".
+        _tb = config.typo_backend
+        self.typo_backend = (os.environ.get("TYPO_BACKEND") or (_tb if isinstance(_tb, str) else "faiss")).lower()
+        self._symspell = self._build_symspell() if self.typo_backend == "symspell" else None
+
+    def _build_symspell(self):
+        from symspellpy import SymSpell
+
+        sym = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
+        for word in self.indexer.key_tokens["words"]:
+            sym.create_dictionary_entry(word, 1)  # uniform freq: fixed vocab, no corpus stats
+        return sym
+
+    def _symspell_correct(self, queries: list[str]) -> tuple[np.ndarray, np.ndarray]:
+        from symspellpy import Verbosity
+
+        corrected: list[str] = []
+        mask: list[bool] = []
+        for q in queries:
+            ql = q.lower()
+            # Guard: don't edit-correct very short tokens (over-corrects to wrong INCI words).
+            if len(ql) < 5:
+                corrected.append(q)
+                mask.append(False)
+                continue
+            sug = self._symspell.lookup(ql, Verbosity.TOP, max_edit_distance=2)
+            if sug:
+                corrected.append(sug[0].term)
+                mask.append(True)
+            else:
+                corrected.append(q)
+                mask.append(False)
+        return np.array(corrected, dtype=object), np.array(mask, dtype=bool)
 
     def clean_token(self, tokens: list[str]) -> list[str]:
         tokens = self.split_colon(tokens)
@@ -221,9 +288,14 @@ class TokenCleaner:
                 delimiter_mask.append(False)
             delimiter_queries.append(q)
 
-        corrected_tokens, mask, _ = self.indexer.search("words", delimiter_queries, self.typo_threshold)
-        delimiter_queries = np.array(delimiter_queries)
-        delimiter_queries[mask] = corrected_tokens[mask].tolist()
+        if self.typo_backend == "symspell":
+            corrected_tokens, mask = self._symspell_correct(delimiter_queries)
+            delimiter_queries = np.array(delimiter_queries, dtype=object)
+            delimiter_queries[mask] = corrected_tokens[mask]
+        else:
+            corrected_tokens, mask, _ = self.indexer.search("words", delimiter_queries, self.typo_threshold)
+            delimiter_queries = np.array(delimiter_queries)
+            delimiter_queries[mask] = corrected_tokens[mask].tolist()
 
         corrected_queries = [
             query if query.lower() not in self.misspelling_set else "oil" for query in delimiter_queries
@@ -249,6 +321,12 @@ class PostProcessor:
         self.misspelling_set = set(config.misspelling_set)
         self.detection_type = config.detection_type
 
+        # Ingredient matcher backend: "faiss" (dense cosine) or "rapidfuzz" (lexical).
+        # Precedence: MATCH_BACKEND env > config.match_backend > "faiss". Toggled for A/B.
+        _mb = config.match_backend
+        self.match_backend = (os.environ.get("MATCH_BACKEND") or (_mb if isinstance(_mb, str) else "faiss")).lower()
+        self.rapidfuzz_threshold = float(os.environ.get("RAPIDFUZZ_THRESHOLD", "85"))
+
         self.faiss_path = default_config.faiss_path
         self.pollutants_path = default_config.pollutants_path_simple
         self.inci_path = default_config.inci_path_simple
@@ -273,8 +351,9 @@ class PostProcessor:
         self.known_words = remove_duplicates([t.lower() for token in self.combined_tokens for t in token.split()])
 
         os.makedirs(self.faiss_path, exist_ok=True)
-        self.indexer.add_index("tokens", self.combined_tokens, os.path.join(self.faiss_path, "faiss_tokens"))
-        self.indexer.add_index("words", self.known_words, os.path.join(self.faiss_path, "faiss_words"))
+        suffix = self.indexer.index_suffix
+        self.indexer.add_index("tokens", self.combined_tokens, os.path.join(self.faiss_path, f"faiss_tokens{suffix}"))
+        self.indexer.add_index("words", self.known_words, os.path.join(self.faiss_path, f"faiss_words{suffix}"))
 
         for ingredient in self.combined_tokens:
             self.trie.insert(ingredient)
@@ -303,7 +382,12 @@ class PostProcessor:
         remaining_tokens = trie_ingredients[mask_trie]
 
         if len(remaining_tokens) != 0:
-            matches, mask, _ = self.indexer.search("tokens", remaining_tokens, self.ingredient_threshold)
+            if self.match_backend == "rapidfuzz":
+                matches, mask, _ = self.indexer.rapidfuzz_search(
+                    "tokens", list(remaining_tokens), self.rapidfuzz_threshold
+                )
+            else:
+                matches, mask, _ = self.indexer.search("tokens", remaining_tokens, self.ingredient_threshold)
             mask_corrected = np.bitwise_and(mask_trie[mask_trie], mask)
 
             idx_mask_trie = np.where(mask_trie)[0]
@@ -319,7 +403,7 @@ class PostProcessor:
             ingredients = self.remove_redundancy(remove_duplicates(ingredients))
             results["ingredients"] = ingredients
 
-        if self.detection_type in ["pollutants", "both"] and ingredients:
+        if self.detection_type in ["pollutants", "both"] and len(ingredients) > 0:
             results["pollutants"] = remove_duplicates(
                 [self.find_pollutants(ing) for ing in ingredients if self.find_pollutants(ing) is not None]
             )

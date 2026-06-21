@@ -1,0 +1,1060 @@
+{
+  "summary": {
+    "label": "rapidocr_default_minilm",
+    "n_cases": 59,
+    "metrics": {
+      "exact_f1": 0.2971,
+      "exact_acc": 0.2081,
+      "lev_f1": 0.3048,
+      "lev_acc": 0.2143
+    },
+    "build_secs": 2.3,
+    "infer_secs_total": 95.0,
+    "infer_secs_mean": 1.61,
+    "peak_rss_gb": 1.7,
+    "config": {
+      "ocr_engine": "rapidocr",
+      "embed_model": "(config default)"
+    }
+  },
+  "per_image": [
+    {
+      "id": "0083800047833",
+      "n_gt": 23,
+      "n_pred": 4,
+      "exact_f1": 0.222,
+      "exact_acc": 0.13,
+      "lev_f1": 0.222,
+      "lev_acc": 0.13,
+      "secs": 1.62,
+      "pred": [
+        "aqua",
+        "glycerin",
+        "glycolide",
+        "water"
+      ]
+    },
+    {
+      "id": "0085805190880",
+      "n_gt": 38,
+      "n_pred": 10,
+      "exact_f1": 0.25,
+      "exact_acc": 0.158,
+      "lev_f1": 0.286,
+      "lev_acc": 0.184,
+      "secs": 3.0,
+      "pred": [
+        "beeswax",
+        "benzophenone-3",
+        "bht",
+        "butene",
+        "citral",
+        "lac",
+        "limonene",
+        "mica",
+        "petrolatum",
+        "polyisobutene"
+      ]
+    },
+    {
+      "id": "0768614212331",
+      "n_gt": 59,
+      "n_pred": 11,
+      "exact_f1": 0.286,
+      "exact_acc": 0.169,
+      "lev_f1": 0.286,
+      "lev_acc": 0.169,
+      "secs": 4.53,
+      "pred": [
+        "alcohol",
+        "aqua",
+        "butyl methoxydibenzoylmethane",
+        "citral",
+        "dimethicone",
+        "hydrogenated polyisobutene",
+        "isododecane",
+        "limonene",
+        "saccharin",
+        "talc",
+        "water"
+      ]
+    },
+    {
+      "id": "0842101102074",
+      "n_gt": 47,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 5.4,
+      "pred": []
+    },
+    {
+      "id": "11112140153911",
+      "n_gt": 11,
+      "n_pred": 8,
+      "exact_f1": 0.737,
+      "exact_acc": 0.636,
+      "lev_f1": 0.737,
+      "lev_acc": 0.636,
+      "secs": 0.68,
+      "pred": [
+        "aqua",
+        "cetearyl alcohol",
+        "cetyl alcohol",
+        "glycerin",
+        "guar hydroxypropyltrimonium chloride",
+        "hydrogen",
+        "propylene glycol",
+        "water"
+      ]
+    },
+    {
+      "id": "3253581766538",
+      "n_gt": 26,
+      "n_pred": 12,
+      "exact_f1": 0.579,
+      "exact_acc": 0.423,
+      "lev_f1": 0.579,
+      "lev_acc": 0.423,
+      "secs": 3.07,
+      "pred": [
+        "aqua",
+        "butter",
+        "ceteareth-33",
+        "coco-caprylate/caprate",
+        "coumarin",
+        "glycerin",
+        "limonene",
+        "linalool",
+        "mannitol",
+        "parfum",
+        "tocopherol",
+        "water"
+      ]
+    },
+    {
+      "id": "3253581780039",
+      "n_gt": 17,
+      "n_pred": 7,
+      "exact_f1": 0.333,
+      "exact_acc": 0.235,
+      "lev_f1": 0.333,
+      "lev_acc": 0.235,
+      "secs": 3.57,
+      "pred": [
+        "alpha-isomethyl ionone",
+        "beeswax",
+        "benzyl benzoate",
+        "butter",
+        "glycol",
+        "hydrogenated coco-glycerides",
+        "octyldodecanol"
+      ]
+    },
+    {
+      "id": "3367729117264",
+      "n_gt": 42,
+      "n_pred": 11,
+      "exact_f1": 0.34,
+      "exact_acc": 0.214,
+      "lev_f1": 0.37,
+      "lev_acc": 0.238,
+      "secs": 2.04,
+      "pred": [
+        "alanine",
+        "citral",
+        "dextrin",
+        "fructose",
+        "glycerin",
+        "glycol",
+        "hexyl nicotinate",
+        "hexylglycerin",
+        "paraffin",
+        "propylene glycol",
+        "triethanolamine"
+      ]
+    },
+    {
+      "id": "3499320013727",
+      "n_gt": 19,
+      "n_pred": 7,
+      "exact_f1": 0.385,
+      "exact_acc": 0.263,
+      "lev_f1": 0.385,
+      "lev_acc": 0.263,
+      "secs": 1.07,
+      "pred": [
+        "butter",
+        "carbomer",
+        "disodium edta",
+        "glycol",
+        "panthenol",
+        "parfum",
+        "xanthan gum"
+      ]
+    },
+    {
+      "id": "3499320014854",
+      "n_gt": 23,
+      "n_pred": 7,
+      "exact_f1": 0.2,
+      "exact_acc": 0.13,
+      "lev_f1": 0.2,
+      "lev_acc": 0.13,
+      "secs": 1.59,
+      "pred": [
+        "alcohol",
+        "aqua",
+        "carbon",
+        "ethylhexyl salicylate",
+        "glycine",
+        "glycol",
+        "hexyl benzoate"
+      ]
+    },
+    {
+      "id": "3574661563312",
+      "n_gt": 8,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 1.06,
+      "pred": []
+    },
+    {
+      "id": "3574661588353",
+      "n_gt": 19,
+      "n_pred": 6,
+      "exact_f1": 0.24,
+      "exact_acc": 0.158,
+      "lev_f1": 0.24,
+      "lev_acc": 0.158,
+      "secs": 0.86,
+      "pred": [
+        "acrylates",
+        "aqua",
+        "chlorphenesin",
+        "crosspolymer",
+        "eugenol",
+        "glycol"
+      ]
+    },
+    {
+      "id": "3600522020837",
+      "n_gt": 41,
+      "n_pred": 13,
+      "exact_f1": 0.296,
+      "exact_acc": 0.195,
+      "lev_f1": 0.296,
+      "lev_acc": 0.195,
+      "secs": 5.89,
+      "pred": [
+        "acrylamide",
+        "alcohol",
+        "aqua",
+        "copolymer",
+        "dimethicone",
+        "ethane",
+        "limonene",
+        "paraffin",
+        "paraffinum liquidum",
+        "polyisobutene",
+        "sorbitan tristearate",
+        "tocopherol",
+        "water"
+      ]
+    },
+    {
+      "id": "3600523193226",
+      "n_gt": 11,
+      "n_pred": 5,
+      "exact_f1": 0.5,
+      "exact_acc": 0.364,
+      "lev_f1": 0.588,
+      "lev_acc": 0.455,
+      "secs": 0.81,
+      "pred": [
+        "isobutane",
+        "methylmethionine",
+        "titanium dioxide",
+        "triethoxycaprylylsilane",
+        "trimethylsiloxysilicate"
+      ]
+    },
+    {
+      "id": "3600542169950",
+      "n_gt": 22,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 0.6,
+      "pred": []
+    },
+    {
+      "id": "3616301640943",
+      "n_gt": 19,
+      "n_pred": 8,
+      "exact_f1": 0.519,
+      "exact_acc": 0.368,
+      "lev_f1": 0.519,
+      "lev_acc": 0.368,
+      "secs": 2.18,
+      "pred": [
+        "alcohol",
+        "aqua",
+        "citral",
+        "eugenol",
+        "hydroxycitronellal",
+        "linalool",
+        "parfum",
+        "water"
+      ]
+    },
+    {
+      "id": "4005800162329",
+      "n_gt": 32,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 0.79,
+      "pred": []
+    },
+    {
+      "id": "4005800162350",
+      "n_gt": 32,
+      "n_pred": 2,
+      "exact_f1": 0.059,
+      "exact_acc": 0.031,
+      "lev_f1": 0.059,
+      "lev_acc": 0.031,
+      "secs": 0.77,
+      "pred": [
+        "lysine",
+        "sodium chloride"
+      ]
+    },
+    {
+      "id": "4005900546234",
+      "n_gt": 23,
+      "n_pred": 15,
+      "exact_f1": 0.579,
+      "exact_acc": 0.478,
+      "lev_f1": 0.579,
+      "lev_acc": 0.478,
+      "secs": 1.06,
+      "pred": [
+        "aqua",
+        "butyrospermum parkii butter",
+        "carbomer",
+        "cetearyl alcohol",
+        "edta",
+        "ethylhexyl stearate",
+        "ethylhexylglycerin",
+        "glycerin",
+        "glycyrrhiza inflata root extract",
+        "lac",
+        "methylpropanediol",
+        "none",
+        "panthenol",
+        "phenoxyethanol",
+        "tin"
+      ]
+    },
+    {
+      "id": "4008491107792",
+      "n_gt": 14,
+      "n_pred": 4,
+      "exact_f1": 0.222,
+      "exact_acc": 0.143,
+      "lev_f1": 0.316,
+      "lev_acc": 0.214,
+      "secs": 1.81,
+      "pred": [
+        "aloe barbadensis leaf juice",
+        "aqua",
+        "betaine",
+        "geraniol"
+      ]
+    },
+    {
+      "id": "4008666704702",
+      "n_gt": 25,
+      "n_pred": 9,
+      "exact_f1": 0.412,
+      "exact_acc": 0.28,
+      "lev_f1": 0.412,
+      "lev_acc": 0.28,
+      "secs": 1.18,
+      "pred": [
+        "alcohol",
+        "aqua",
+        "basic blue 99",
+        "basic brown 17",
+        "caffeine",
+        "citronellol",
+        "parfum",
+        "pca",
+        "propylparaben"
+      ]
+    },
+    {
+      "id": "4008666705013",
+      "n_gt": 17,
+      "n_pred": 2,
+      "exact_f1": 0.211,
+      "exact_acc": 0.118,
+      "lev_f1": 0.211,
+      "lev_acc": 0.118,
+      "secs": 1.32,
+      "pred": [
+        "propylparaben",
+        "sodium benzoate"
+      ]
+    },
+    {
+      "id": "4015100718799",
+      "n_gt": 25,
+      "n_pred": 3,
+      "exact_f1": 0.143,
+      "exact_acc": 0.08,
+      "lev_f1": 0.207,
+      "lev_acc": 0.12,
+      "secs": 0.72,
+      "pred": [
+        "ci 47005",
+        "glycol distearate",
+        "methicone"
+      ]
+    },
+    {
+      "id": "4015100814811",
+      "n_gt": 40,
+      "n_pred": 18,
+      "exact_f1": 0.386,
+      "exact_acc": 0.275,
+      "lev_f1": 0.441,
+      "lev_acc": 0.325,
+      "secs": 2.67,
+      "pred": [
+        "alcohol",
+        "ammonium chloride",
+        "aqua",
+        "betaine",
+        "ceteareth-20",
+        "cetearyl alcohol",
+        "cinnamal",
+        "dicaprylyl carbonate",
+        "ethanolamine",
+        "ethylparaben",
+        "glycolic acid",
+        "isopropyl alcohol",
+        "linalool",
+        "myristamidopropyl dimethylamine",
+        "polyquaternium-6",
+        "sodium benzoate",
+        "tocopheryl acetate",
+        "water"
+      ]
+    },
+    {
+      "id": "4021457652471",
+      "n_gt": 38,
+      "n_pred": 8,
+      "exact_f1": 0.13,
+      "exact_acc": 0.079,
+      "lev_f1": 0.17,
+      "lev_acc": 0.105,
+      "secs": 1.7,
+      "pred": [
+        "alcohol",
+        "biosaccharide gum-1",
+        "dextrin",
+        "ficin",
+        "glycine",
+        "glycol",
+        "lecithin",
+        "water"
+      ]
+    },
+    {
+      "id": "4025089085034",
+      "n_gt": 14,
+      "n_pred": 8,
+      "exact_f1": 0.455,
+      "exact_acc": 0.357,
+      "lev_f1": 0.455,
+      "lev_acc": 0.357,
+      "secs": 2.08,
+      "pred": [
+        "alcohol",
+        "aqua",
+        "betaine",
+        "butter",
+        "hydrolyzed soy",
+        "inulin",
+        "linalool",
+        "parfum"
+      ]
+    },
+    {
+      "id": "4030651052031",
+      "n_gt": 7,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 2.04,
+      "pred": []
+    },
+    {
+      "id": "4051424570002",
+      "n_gt": 27,
+      "n_pred": 10,
+      "exact_f1": 0.27,
+      "exact_acc": 0.185,
+      "lev_f1": 0.316,
+      "lev_acc": 0.222,
+      "secs": 1.69,
+      "pred": [
+        "alcohol",
+        "aqua",
+        "caprylic/capric triglyceride",
+        "cetearyl glucoside",
+        "citronellol",
+        "decyl oleate",
+        "glycine",
+        "hydrogen",
+        "linalool",
+        "palm glycerides"
+      ]
+    },
+    {
+      "id": "4056489764137",
+      "n_gt": 18,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 0.58,
+      "pred": []
+    },
+    {
+      "id": "4058172927928",
+      "n_gt": 11,
+      "n_pred": 4,
+      "exact_f1": 0.533,
+      "exact_acc": 0.364,
+      "lev_f1": 0.533,
+      "lev_acc": 0.364,
+      "secs": 2.77,
+      "pred": [
+        "allantoin",
+        "parfum",
+        "phenoxyethanol",
+        "sodium lauriminodipropionate"
+      ]
+    },
+    {
+      "id": "4059729444530",
+      "n_gt": 20,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 0.88,
+      "pred": []
+    },
+    {
+      "id": "4062300419414",
+      "n_gt": 17,
+      "n_pred": 5,
+      "exact_f1": 0.364,
+      "exact_acc": 0.235,
+      "lev_f1": 0.364,
+      "lev_acc": 0.235,
+      "secs": 1.42,
+      "pred": [
+        "alcohol",
+        "aqua",
+        "cetearyl alcohol",
+        "myristyl alcohol",
+        "myristyl glucoside"
+      ]
+    },
+    {
+      "id": "4062300419445",
+      "n_gt": 4,
+      "n_pred": 2,
+      "exact_f1": 0.667,
+      "exact_acc": 0.5,
+      "lev_f1": 0.667,
+      "lev_acc": 0.5,
+      "secs": 0.71,
+      "pred": [
+        "parfum",
+        "tocopheryl acetate"
+      ]
+    },
+    {
+      "id": "4063528071484",
+      "n_gt": 16,
+      "n_pred": 9,
+      "exact_f1": 0.72,
+      "exact_acc": 0.562,
+      "lev_f1": 0.72,
+      "lev_acc": 0.562,
+      "secs": 2.89,
+      "pred": [
+        "aqua",
+        "benzyl salicylate",
+        "glycerin",
+        "guar hydroxypropyltrimonium chloride",
+        "linalool",
+        "niacinamide",
+        "parfum",
+        "sodium chloride",
+        "sodium cocoyl isethionate"
+      ]
+    },
+    {
+      "id": "4064666328195",
+      "n_gt": 16,
+      "n_pred": 4,
+      "exact_f1": 0.3,
+      "exact_acc": 0.188,
+      "lev_f1": 0.3,
+      "lev_acc": 0.188,
+      "secs": 1.39,
+      "pred": [
+        "aqua",
+        "betaine",
+        "citric acid",
+        "water"
+      ]
+    },
+    {
+      "id": "4066447086508",
+      "n_gt": 7,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 0.66,
+      "pred": []
+    },
+    {
+      "id": "4066447241693",
+      "n_gt": 14,
+      "n_pred": 4,
+      "exact_f1": 0.222,
+      "exact_acc": 0.143,
+      "lev_f1": 0.222,
+      "lev_acc": 0.143,
+      "secs": 1.04,
+      "pred": [
+        "alcohol",
+        "ci 40800",
+        "cyclopentasiloxane",
+        "lac"
+      ]
+    },
+    {
+      "id": "4066447341881",
+      "n_gt": 19,
+      "n_pred": 2,
+      "exact_f1": 0.095,
+      "exact_acc": 0.053,
+      "lev_f1": 0.095,
+      "lev_acc": 0.053,
+      "secs": 0.85,
+      "pred": [
+        "aqua",
+        "betaine"
+      ]
+    },
+    {
+      "id": "4066447467451",
+      "n_gt": 7,
+      "n_pred": 3,
+      "exact_f1": 0.6,
+      "exact_acc": 0.429,
+      "lev_f1": 0.6,
+      "lev_acc": 0.429,
+      "secs": 0.77,
+      "pred": [
+        "aqua",
+        "citronellol",
+        "parfum"
+      ]
+    },
+    {
+      "id": "4066447593754",
+      "n_gt": 21,
+      "n_pred": 7,
+      "exact_f1": 0.357,
+      "exact_acc": 0.238,
+      "lev_f1": 0.357,
+      "lev_acc": 0.238,
+      "secs": 1.48,
+      "pred": [
+        "dicaprylyl carbonate",
+        "dimethicone",
+        "hectorite",
+        "limnanthes alba seed oil",
+        "polydecene",
+        "tocopherol",
+        "tribehenin"
+      ]
+    },
+    {
+      "id": "4066447641219",
+      "n_gt": 21,
+      "n_pred": 4,
+      "exact_f1": 0.32,
+      "exact_acc": 0.19,
+      "lev_f1": 0.32,
+      "lev_acc": 0.19,
+      "secs": 1.07,
+      "pred": [
+        "aqua",
+        "citric acid",
+        "glyceryl oleate",
+        "parfum"
+      ]
+    },
+    {
+      "id": "42420743",
+      "n_gt": 17,
+      "n_pred": 6,
+      "exact_f1": 0.522,
+      "exact_acc": 0.353,
+      "lev_f1": 0.522,
+      "lev_acc": 0.353,
+      "secs": 1.53,
+      "pred": [
+        "aqua",
+        "glycerin",
+        "glyceryl oleate",
+        "lauryl glucoside",
+        "lavandula angustifolia flower extract",
+        "linalool"
+      ]
+    },
+    {
+      "id": "4255628100076",
+      "n_gt": 22,
+      "n_pred": 4,
+      "exact_f1": 0.231,
+      "exact_acc": 0.136,
+      "lev_f1": 0.231,
+      "lev_acc": 0.136,
+      "secs": 1.32,
+      "pred": [
+        "argania spinosa kernel oil",
+        "betaine",
+        "glycol",
+        "propanediol"
+      ]
+    },
+    {
+      "id": "4260401410808",
+      "n_gt": 12,
+      "n_pred": 2,
+      "exact_f1": 0.143,
+      "exact_acc": 0.083,
+      "lev_f1": 0.143,
+      "lev_acc": 0.083,
+      "secs": 0.97,
+      "pred": [
+        "hydroxyacetophenone",
+        "pca"
+      ]
+    },
+    {
+      "id": "4260602121510",
+      "n_gt": 25,
+      "n_pred": 2,
+      "exact_f1": 0.074,
+      "exact_acc": 0.04,
+      "lev_f1": 0.074,
+      "lev_acc": 0.04,
+      "secs": 0.84,
+      "pred": [
+        "alcohol",
+        "aqua"
+      ]
+    },
+    {
+      "id": "4260739997651",
+      "n_gt": 20,
+      "n_pred": 5,
+      "exact_f1": 0.24,
+      "exact_acc": 0.15,
+      "lev_f1": 0.24,
+      "lev_acc": 0.15,
+      "secs": 1.05,
+      "pred": [
+        "alcohol",
+        "cinnamal",
+        "glycerin",
+        "linalool",
+        "phenoxyethanol"
+      ]
+    },
+    {
+      "id": "4305615418667",
+      "n_gt": 23,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "exact_acc": 0.0,
+      "lev_f1": 0,
+      "lev_acc": 0.0,
+      "secs": 0.2,
+      "pred": []
+    },
+    {
+      "id": "5060896573588",
+      "n_gt": 16,
+      "n_pred": 4,
+      "exact_f1": 0.3,
+      "exact_acc": 0.188,
+      "lev_f1": 0.3,
+      "lev_acc": 0.188,
+      "secs": 1.13,
+      "pred": [
+        "aqua",
+        "benzoic acid",
+        "coco-glucoside",
+        "lac"
+      ]
+    },
+    {
+      "id": "5999566330483",
+      "n_gt": 7,
+      "n_pred": 2,
+      "exact_f1": 0.222,
+      "exact_acc": 0.143,
+      "lev_f1": 0.222,
+      "lev_acc": 0.143,
+      "secs": 2.06,
+      "pred": [
+        "ethylhexylglycerin",
+        "peg-7"
+      ]
+    },
+    {
+      "id": "9120082221559",
+      "n_gt": 13,
+      "n_pred": 3,
+      "exact_f1": 0.375,
+      "exact_acc": 0.231,
+      "lev_f1": 0.375,
+      "lev_acc": 0.231,
+      "secs": 1.41,
+      "pred": [
+        "alcohol denat.",
+        "aqua",
+        "linalool"
+      ]
+    },
+    {
+      "id": "9120112229043",
+      "n_gt": 48,
+      "n_pred": 13,
+      "exact_f1": 0.197,
+      "exact_acc": 0.125,
+      "lev_f1": 0.197,
+      "lev_acc": 0.125,
+      "secs": 2.11,
+      "pred": [
+        "cyclopentasiloxane",
+        "dextrin",
+        "dimethicone",
+        "edta",
+        "glycol",
+        "hectorite",
+        "hydrogen dimethicone",
+        "imidazole",
+        "nannochloropsis oculata extract",
+        "pectin",
+        "polymethylsilsesquioxane",
+        "trehalose",
+        "zinc"
+      ]
+    },
+    {
+      "id": "99999",
+      "n_gt": 23,
+      "n_pred": 8,
+      "exact_f1": 0.387,
+      "exact_acc": 0.261,
+      "lev_f1": 0.387,
+      "lev_acc": 0.261,
+      "secs": 1.54,
+      "pred": [
+        "alcohol",
+        "ethylhexyl stearate",
+        "geraniol",
+        "limonene",
+        "oryza sativa bran oil",
+        "sucrose",
+        "tin",
+        "tocopherol"
+      ]
+    },
+    {
+      "id": "99999_1",
+      "n_gt": 12,
+      "n_pred": 7,
+      "exact_f1": 0.632,
+      "exact_acc": 0.5,
+      "lev_f1": 0.632,
+      "lev_acc": 0.5,
+      "secs": 0.9,
+      "pred": [
+        "aqua",
+        "ethylhexylglycerin",
+        "glycereth-26",
+        "niacinamide",
+        "phenoxyethanol",
+        "water",
+        "zinc"
+      ]
+    },
+    {
+      "id": "99999_11",
+      "n_gt": 25,
+      "n_pred": 19,
+      "exact_f1": 0.636,
+      "exact_acc": 0.56,
+      "lev_f1": 0.636,
+      "lev_acc": 0.56,
+      "secs": 1.42,
+      "pred": [
+        "acrylic acid",
+        "alcohol",
+        "aqua",
+        "caprylic/capric triglyceride",
+        "citral",
+        "citronellol",
+        "copolymer",
+        "ethylhexylglycerin",
+        "geraniol",
+        "glycerin",
+        "hexyl cinnamal",
+        "hydrogen",
+        "limonene",
+        "linalool",
+        "parfum",
+        "polyacrylate",
+        "sodium benzoate",
+        "tapioca starch",
+        "tocopherol"
+      ]
+    },
+    {
+      "id": "99999_12",
+      "n_gt": 19,
+      "n_pred": 9,
+      "exact_f1": 0.5,
+      "exact_acc": 0.368,
+      "lev_f1": 0.5,
+      "lev_acc": 0.368,
+      "secs": 1.39,
+      "pred": [
+        "aqua",
+        "betaine",
+        "coco-glucoside",
+        "hydrogen",
+        "kaolin",
+        "montmorillonite",
+        "parfum",
+        "stearic acid",
+        "water"
+      ]
+    },
+    {
+      "id": "99999_15",
+      "n_gt": 15,
+      "n_pred": 1,
+      "exact_f1": 0.125,
+      "exact_acc": 0.067,
+      "lev_f1": 0.125,
+      "lev_acc": 0.067,
+      "secs": 0.69,
+      "pred": [
+        "ethylhexylglycerin"
+      ]
+    },
+    {
+      "id": "99999_3",
+      "n_gt": 20,
+      "n_pred": 9,
+      "exact_f1": 0.414,
+      "exact_acc": 0.3,
+      "lev_f1": 0.414,
+      "lev_acc": 0.3,
+      "secs": 1.59,
+      "pred": [
+        "aqua",
+        "betaine",
+        "cinnamal",
+        "glycol",
+        "hydroxycitronellal",
+        "linalool",
+        "parfum",
+        "sodium chloride",
+        "water"
+      ]
+    },
+    {
+      "id": "99999_4",
+      "n_gt": 22,
+      "n_pred": 3,
+      "exact_f1": 0.24,
+      "exact_acc": 0.136,
+      "lev_f1": 0.24,
+      "lev_acc": 0.136,
+      "secs": 0.88,
+      "pred": [
+        "glycol distearate",
+        "parfum",
+        "sodium benzoate"
+      ]
+    },
+    {
+      "id": "99999_7",
+      "n_gt": 23,
+      "n_pred": 10,
+      "exact_f1": 0.364,
+      "exact_acc": 0.261,
+      "lev_f1": 0.364,
+      "lev_acc": 0.261,
+      "secs": 1.63,
+      "pred": [
+        "acrylic acid/vp crosspolymer",
+        "alcohol",
+        "aqua",
+        "cinnamal",
+        "citronellol",
+        "crosspolymer",
+        "ionone",
+        "linalool",
+        "salicylaldehyde",
+        "triethanolamine"
+      ]
+    }
+  ]
+}

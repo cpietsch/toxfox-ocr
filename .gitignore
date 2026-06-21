@@ -13,3 +13,6 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Benchmark run logs (verbose stdout); the *.json result files are kept as evidence
+benchmark_results/*.log

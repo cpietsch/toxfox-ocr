@@ -12,3 +12,10 @@ pandas
 fuzzywuzzy
 easyocr
 python-multipart
+
+# OCR + matching upgrade (see README "OCR engine & matching"):
+python-doctr==1.0.1   # default OCR engine (db_resnet50 + crnn_vgg16_bn) on the torch+cpu stack
+symspellpy==6.9.0     # default word-level typo correction (Symmetric-Delete over the INCI vocab)
+# Optional alternative engines/matchers, selectable via config/env (not required by the default):
+#   rapidocr==3.8.4 onnxruntime==1.27.0   # OCR_ENGINE=rapidocr (PP-OCRv5, pure ONNXRuntime)
+#   rapidfuzz==3.14.5                      # MATCH_BACKEND=rapidfuzz (lexical ingredient matcher)

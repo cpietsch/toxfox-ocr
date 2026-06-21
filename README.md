@@ -229,6 +229,21 @@ Algorithm configurations, divided into:
 - Postprocessing
 - Evaluation
 
+The most relevant tuning switches (each also overridable via the matching env var, which takes
+precedence over the file):
+
+| Key | Values | Default | Env override |
+|---|---|---|---|
+| `ocr.engine` | `easyocr` \| `doctr` \| `rapidocr` \| `paddleocr` | `doctr` | `OCR_ENGINE` |
+| `ocr.doctr_reco` | `crnn_vgg16_bn` \| `parseq` | `crnn_vgg16_bn` | `DOCTR_RECO` |
+| `postprocessing.match_backend` | `faiss` \| `rapidfuzz` | `faiss` | `MATCH_BACKEND` |
+| `postprocessing.typo_backend` | `faiss` \| `symspell` | `symspell` | `TYPO_BACKEND` |
+| `postprocessing.FAISSIndexer_model_name` | any sentence-transformers model | `all-MiniLM-L6-v2` | `EMBED_MODEL` |
+| `preprocessing.max_pixels` | int (`0` disables) | `3000000` | — |
+
+See [`SOTA_UPGRADE.md`](SOTA_UPGRADE.md) for the before/after benchmark and the ablation that
+chose these defaults.
+
 
 # Development
 This chapter is relevant if you are a developer on the project.
@@ -281,11 +296,27 @@ $ poetry shell
 
 - **OCR/Textrecognition**
 
-  The text recognition algorithm used is the open-source available [EasyOCR](https://github.com/JaidedAI/EasyOCR/blob/master/README.md) with all deep learning execution based on Pytorch. EasyOcr also recognizes text boxes/blocks. This feature from EasyOCR is used to align rows and order words to recognize ingredients that span over several words and lines.
+  The OCR engine is **pluggable** (`ocr.engine` in `pipeline_config.yml`, or the `OCR_ENGINE`
+  env var). The default is **[docTR](https://github.com/mindee/doctr)** (`db_resnet50`
+  detector + `crnn_vgg16_bn` recognizer, on the PyTorch CPU stack), which measured **+19.5 %
+  exact-F1 over EasyOCR** on the 59-image evaluation set while being ~2× faster and lighter
+  (see [`SOTA_UPGRADE.md`](SOTA_UPGRADE.md)). [EasyOCR](https://github.com/JaidedAI/EasyOCR)
+  and [RapidOCR](https://github.com/RapidAI/RapidOCR) are also selectable. Whichever engine is
+  used, its text boxes are aligned into rows/reading order by a shared clustering step so that
+  ingredients spanning several words and lines are recognized.
 
 - **Postprocessing**
 
-  In the postprocessing step the OCR output is matched to INCI ingredients provided in the excel file with INCI ingredients. The algorithm used for similarity search is [Faiss](https://ai.meta.com/tools/faiss/) (Facebook AI Similarity Search), where the different words found in the OCR output are matched to a database with embedded INCI ingredients. The algorithm tries to find "best matches", i.e allowing for certain errors in the OCR output, and favors longer matches. For example, if "nitrid", "acid" and "nitrid acid" were all INCI ingredients, it would first try to find "nitrid acid" as a match.
+  In the postprocessing step the OCR output is matched to INCI ingredients provided in the
+  excel file with INCI ingredients. OCR'd words are first typo-corrected against the INCI word
+  vocabulary — by default with **[SymSpell](https://github.com/wolfgarbe/SymSpell)**
+  edit-distance correction (`typo_backend`), which fits OCR character errors on the fixed Latin
+  nomenclature. The cleaned tokens are then matched to INCI names; the default matcher is
+  [Faiss](https://ai.meta.com/tools/faiss/) (Facebook AI Similarity Search) similarity search
+  over embedded INCI ingredients (`match_backend`; a lexical `rapidfuzz` matcher is also
+  available). The algorithm allows for certain OCR errors and favors longer matches — e.g. if
+  "nitrid", "acid" and "nitrid acid" were all INCI ingredients, it would first try to match
+  "nitrid acid".
 
 # Collaborators
 
