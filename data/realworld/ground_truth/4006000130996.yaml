@@ -1,0 +1,53 @@
+INCI_list:
+  - Aqua
+  - Alcohol Denat.
+  - Butyl Methoxydibenzoylmethane
+  - Ethylhexyl Triazone
+  - Isopropyl Palmitate
+  - Bis-Ethylhexyloxyphenol Methoxyphenyl Triazine
+  - C12-15 Alkyl Benzoate
+  - Dibutyl Adipate
+  - Butylene Glycol Dicaprylate/Dicaprate
+  - Diethylamino Hydroxybenzoyl Hexyl Benzoate
+  - Glyceryl Stearate
+  - Phenylbenzimidazole Sulfonic Acid
+  - Glycyrrhetinic Acid
+  - Glycerin
+  - Tocopheryl Acetate
+  - Microcrystalline Cellulose
+  - C18-38 Alkyl Hydroxystearoyl Stearate
+  - Copernicia Cerifera Cera
+  - Hydrogenated Rapeseed Oil
+  - Cetyl Palmitate
+  - Sodium Stearoyl Glutamate
+  - Xanthan Gum
+  - Cellulose Gum
+  - Sodium Hydroxide
+  - Trisodium EDTA
+  - Caprylyl Glycol
+  - Phenoxyethanol
+  - Linalool
+  - Benzyl Alcohol
+  - Linalyl Acetate
+  - Alpha-Isomethyl Ionone
+  - Citronellol
+  - Vanillin
+  - Parfum
+brand: Nivea (Beiersdorf)
+extracted_barcode: '4006000130996'
+id: '4006000130996'
+image_name: 4006000130996.jpg
+model: ''
+product_name: NIVEA Sun Sonnenspray Schutz & Bräune LSF 50
+raw_ingredients_list: Aqua, Alcohol Denat., Butyl Methoxydibenzoylmethane, Ethylhexyl
+  Triazone, Isopropyl Palmitate, Bis-Ethylhexyloxyphenol Methoxyphenyl Triazine, C12-15
+  Alkyl Benzoate, Dibutyl Adipate, Butylene Glycol Dicaprylate/Dicaprate, Diethylamino
+  Hydroxybenzoyl Hexyl Benzoate, Glyceryl Stearate, Phenylbenzimidazole Sulfonic Acid,
+  Glycyrrhetinic Acid, Glycerin, Tocopheryl Acetate, Microcrystalline Cellulose, C18-38
+  Alkyl Hydroxystearoyl Stearate, Copernicia Cerifera Cera, Hydrogenated Rapeseed Oil,
+  Cetyl Palmitate, Sodium Stearoyl Glutamate, Xanthan Gum, Cellulose Gum, Sodium Hydroxide,
+  Trisodium EDTA, Caprylyl Glycol, Phenoxyethanol, Linalool, Benzyl Alcohol, Linalyl
+  Acetate, Alpha-Isomethyl Ionone, Citronellol, Vanillin, Parfum
+source: https://www.dm.de/ (NIVEA Sun, dm product image)
+note: Real-world full-bottle photo (curved surface, marketing + usage text surrounds
+  the ingredient panel). Kept separate from the curated data/ground_truth eval set.

@@ -1,0 +1,1053 @@
+{
+  "summary": {
+    "label": "doctr_segment",
+    "n_cases": 59,
+    "metrics": {
+      "exact_f1": 0.476,
+      "exact_acc": 0.4084,
+      "lev_f1": 0.4844,
+      "lev_acc": 0.4196
+    },
+    "peak_rss_gb": 2.74,
+    "config": {
+      "ocr_engine": "doctr",
+      "match_strategy": "segment",
+      "segment_threshold": 80,
+      "isolate_region": true
+    }
+  },
+  "per_image": [
+    {
+      "id": "0083800047833",
+      "n_gt": 23,
+      "n_pred": 14,
+      "exact_f1": 0.703,
+      "lev_f1": 0.703,
+      "pred": [
+        "1,2-hexanediol",
+        "butylene glycol diisononanoate",
+        "caprylyl glycol",
+        "citrus limon fruit extract",
+        "citrus paradisi fruit extract",
+        "cocamidopropyl betaine",
+        "dipropylene glycol",
+        "ethylhexylglycerin",
+        "limonene",
+        "methyl perfluorobutyl ether",
+        "propanediol",
+        "rubus idaeus fruit extract",
+        "sodium hyaluronate",
+        "sodium lauroyl glutamate"
+      ]
+    },
+    {
+      "id": "0085805190880",
+      "n_gt": 38,
+      "n_pred": 27,
+      "exact_f1": 0.831,
+      "lev_f1": 0.831,
+      "pred": [
+        "benzophenone-3",
+        "bht",
+        "bis-diglyceryl polyacyladipate-2",
+        "butyl methoxydibenzoylmethane",
+        "butyrospermum parkii butter",
+        "cetyl peg/ppg-10/1 dimethicone",
+        "citral",
+        "citronellol",
+        "cocos nucifera oil",
+        "diisostearyl malate",
+        "ethylhexyl methoxycinnamate",
+        "geraniol",
+        "hexyl laurate",
+        "hydrogenated polyisobutene",
+        "lanolin",
+        "limonene",
+        "linalool",
+        "mica",
+        "octyldodecyl neopentanoate",
+        "ozokerite",
+        "petrolatum",
+        "polybutene",
+        "polyethylene",
+        "polyglyceryl-4 isostearate",
+        "synthetic fluorphlogopite",
+        "synthetic wax",
+        "titanium dioxide"
+      ]
+    },
+    {
+      "id": "0768614212331",
+      "n_gt": 59,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "0842101102074",
+      "n_gt": 47,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "11112140153911",
+      "n_gt": 11,
+      "n_pred": 9,
+      "exact_f1": 0.9,
+      "lev_f1": 0.9,
+      "pred": [
+        "cetearyl alcohol",
+        "cetyl alcohol",
+        "dimethicone",
+        "glycerin",
+        "guar hydroxypropyltrimonium chloride",
+        "parfum",
+        "peg-40 hydrogenated castor oil",
+        "phenoxyethanol",
+        "propylene glycol"
+      ]
+    },
+    {
+      "id": "3253581766538",
+      "n_gt": 26,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "3253581780039",
+      "n_gt": 17,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "3367729117264",
+      "n_gt": 42,
+      "n_pred": 7,
+      "exact_f1": 0.245,
+      "lev_f1": 0.245,
+      "pred": [
+        "dextrin",
+        "dimethicone",
+        "ethylhexylglycerin",
+        "fructose",
+        "glutamic acid",
+        "lauryl aspartic acid",
+        "paraffin"
+      ]
+    },
+    {
+      "id": "3499320013727",
+      "n_gt": 19,
+      "n_pred": 15,
+      "exact_f1": 0.882,
+      "lev_f1": 0.882,
+      "pred": [
+        "aqua",
+        "behenyl alcohol",
+        "butyrospermum parkii butter",
+        "caprylic/capric triglyceride",
+        "carbomer",
+        "disodium edta",
+        "glycerin",
+        "lecithin",
+        "panthenol",
+        "pentylene glycol",
+        "phenoxyethanol",
+        "sodium hydroxide",
+        "squalane",
+        "tocopherol",
+        "xanthan gum"
+      ]
+    },
+    {
+      "id": "3499320014854",
+      "n_gt": 23,
+      "n_pred": 22,
+      "exact_f1": 0.933,
+      "lev_f1": 0.957,
+      "pred": [
+        "alcohol",
+        "aloe barbadensis leaf juice powder",
+        "aqua",
+        "bis-ethylhexyloxyphenol methoxyphenyl triazine",
+        "c12-15 alkyl benzoate",
+        "carbomer",
+        "cetyl alcohol",
+        "cetyl phosphate",
+        "decyl glucoside",
+        "dicaprylyl carbonate",
+        "diethylamino hydroxybenzoyl hexyl benzoate",
+        "ethylhexyl salicylate",
+        "ethylhexyl triazone",
+        "glycine soja oil",
+        "lecithin",
+        "methylene bis-benzotriazolyl tetramethylbutylphenol",
+        "pentylene glycol",
+        "propylene glycol",
+        "sodium hydroxide",
+        "sorbitol",
+        "tocopheryl acetate",
+        "xanthan gum"
+      ]
+    },
+    {
+      "id": "3574661563312",
+      "n_gt": 8,
+      "n_pred": 5,
+      "exact_f1": 0.615,
+      "lev_f1": 0.615,
+      "pred": [
+        "alpha-isomethyl ionone",
+        "argania spinosa kernel oil",
+        "dimethicone",
+        "ionone",
+        "isopropyl myristate"
+      ]
+    },
+    {
+      "id": "3574661588353",
+      "n_gt": 19,
+      "n_pred": 18,
+      "exact_f1": 0.973,
+      "lev_f1": 0.973,
+      "pred": [
+        "acrylates/c10-30 alkyl acrylate crosspolymer",
+        "aqua",
+        "benzyl benzoate",
+        "bht",
+        "butylene glycol",
+        "caprylyl glycol",
+        "chlorphenesin",
+        "curcuma longa leaf extract",
+        "disodium edta",
+        "eugenol",
+        "geraniol",
+        "glycerin",
+        "limonene",
+        "parfum",
+        "phenoxyethanol",
+        "poloxamer 188",
+        "polysorbate 20",
+        "sodium hydroxide"
+      ]
+    },
+    {
+      "id": "3600522020837",
+      "n_gt": 41,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "3600523193226",
+      "n_gt": 11,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "3600542169950",
+      "n_gt": 22,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "3616301640943",
+      "n_gt": 19,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "4005800162329",
+      "n_gt": 32,
+      "n_pred": 16,
+      "exact_f1": 0.667,
+      "lev_f1": 0.667,
+      "pred": [
+        "arginine",
+        "arginine hcl",
+        "butyrospermum parkii butter",
+        "carnitine",
+        "cetearyl alcohol",
+        "dicaprylyl ether",
+        "glutamic acid",
+        "glycerin",
+        "glycogen",
+        "isopropyl stearate",
+        "lysine hcl",
+        "mannitol",
+        "potassium sorbate",
+        "serine",
+        "sodium pca",
+        "urea"
+      ]
+    },
+    {
+      "id": "4005800162350",
+      "n_gt": 32,
+      "n_pred": 16,
+      "exact_f1": 0.667,
+      "lev_f1": 0.667,
+      "pred": [
+        "1,2-hexanediol",
+        "alanine",
+        "aqua",
+        "butyrospermum parkii butter",
+        "ceramide np",
+        "citrulline",
+        "glycerin",
+        "glyceryl glucoside",
+        "glycogen",
+        "histidine hcl",
+        "lactic acid",
+        "mannitol",
+        "pca",
+        "phenoxyethanol",
+        "sodium chloride",
+        "urea"
+      ]
+    },
+    {
+      "id": "4005900546234",
+      "n_gt": 23,
+      "n_pred": 15,
+      "exact_f1": 0.789,
+      "lev_f1": 0.789,
+      "pred": [
+        "aqua",
+        "caprylic/capric triglyceride",
+        "carbomer",
+        "cetearyl alcohol",
+        "cocoglycerides",
+        "ethylhexylglycerin",
+        "glycerin",
+        "hydrogenated coco-glycerides",
+        "methylpropanediol",
+        "panthenol",
+        "pantolactone",
+        "phenoxyethanol",
+        "sodium hydroxide",
+        "trisodium edta",
+        "ubiquinone"
+      ]
+    },
+    {
+      "id": "4008491107792",
+      "n_gt": 14,
+      "n_pred": 9,
+      "exact_f1": 0.696,
+      "lev_f1": 0.696,
+      "pred": [
+        "aloe barbadensis leaf juice powder",
+        "benzyl alcohol",
+        "citric acid",
+        "cocamidopropyl betaine",
+        "coco-glucoside",
+        "glycerin",
+        "parfum",
+        "sodium coco-sulfate",
+        "sodium sorbate"
+      ]
+    },
+    {
+      "id": "4008666704702",
+      "n_gt": 25,
+      "n_pred": 18,
+      "exact_f1": 0.837,
+      "lev_f1": 0.837,
+      "pred": [
+        "aqua",
+        "basic blue 99",
+        "basic brown 16",
+        "basic brown 17",
+        "behentrimonium chloride",
+        "cetyl alcohol",
+        "citronellol",
+        "ethylparaben",
+        "limonene",
+        "linalool",
+        "methylparaben",
+        "niacinamide",
+        "olea europaea fruit oil",
+        "parfum",
+        "phenoxyethanol",
+        "phytosterols",
+        "propylparaben",
+        "zinc pca"
+      ]
+    },
+    {
+      "id": "4008666705013",
+      "n_gt": 17,
+      "n_pred": 11,
+      "exact_f1": 0.714,
+      "lev_f1": 0.759,
+      "pred": [
+        "aqua",
+        "behentrimonium chloride",
+        "cetearyl alcohol",
+        "hydroxypropyl guar hydroxypropyltrimonium chloride",
+        "niacinamide",
+        "panthenol",
+        "pentylene glycol",
+        "propylparaben",
+        "sodium ethylparaben",
+        "sodium hyaluronate",
+        "zinc chloride"
+      ]
+    },
+    {
+      "id": "4015100718799",
+      "n_gt": 25,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "4015100814811",
+      "n_gt": 40,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "4021457652471",
+      "n_gt": 38,
+      "n_pred": 31,
+      "exact_f1": 0.87,
+      "lev_f1": 0.886,
+      "pred": [
+        "aloe barbadensis leaf juice",
+        "anhydroxylitol",
+        "biosaccharide gum-1",
+        "bisabolol",
+        "caprylic/capric triglyceride",
+        "cetearyl alcohol",
+        "decyl cocoate",
+        "dipotassium glycyrrhizate",
+        "ectoin",
+        "glycerin",
+        "glyceryl stearate",
+        "glycine soja oil",
+        "hamamelis virginiana leaf extract",
+        "helianthus annuus seed oil",
+        "hydrogenated lecithin",
+        "lecithin",
+        "levulinic acid",
+        "maltodextrin",
+        "melissa officinalis leaf extract",
+        "olea europaea fruit oil",
+        "pentylene glycol",
+        "prunus amygdalus dulcis oil",
+        "simmondsia chinensis seed oil",
+        "sodium anisate",
+        "sodium hydroxide",
+        "sodium levulinate",
+        "sodium stearoyl glutamate",
+        "tocopherol",
+        "xanthan gum",
+        "xylitol",
+        "xylitylglucoside"
+      ]
+    },
+    {
+      "id": "4025089085034",
+      "n_gt": 14,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "4030651052031",
+      "n_gt": 7,
+      "n_pred": 2,
+      "exact_f1": 0.222,
+      "lev_f1": 0.222,
+      "pred": [
+        "sodium chloride",
+        "sodium lauryl aspartate"
+      ]
+    },
+    {
+      "id": "4051424570002",
+      "n_gt": 27,
+      "n_pred": 22,
+      "exact_f1": 0.857,
+      "lev_f1": 0.857,
+      "pred": [
+        "argania spinosa kernel oil",
+        "calendula officinalis flower extract",
+        "caprylic/capric triglyceride",
+        "cetearyl alcohol",
+        "cetearyl glucoside",
+        "citral",
+        "citronellol",
+        "cocos nucifera oil",
+        "decyl oleate",
+        "geraniol",
+        "glycerin",
+        "glyceryl stearate citrate",
+        "glycine soja oil",
+        "helianthus annuus seed oil",
+        "hydrogenated palm glycerides citrate",
+        "limonene",
+        "pentylene glycol",
+        "punica granatum seed oil",
+        "sclerotium gum",
+        "sodium hyaluronate",
+        "squalane",
+        "tocopherol"
+      ]
+    },
+    {
+      "id": "4056489764137",
+      "n_gt": 18,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "4058172927928",
+      "n_gt": 11,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "4059729444530",
+      "n_gt": 20,
+      "n_pred": 11,
+      "exact_f1": 0.71,
+      "lev_f1": 0.71,
+      "pred": [
+        "dimethicone",
+        "ethylhexylglycerin",
+        "hydrogenated polyisobutene",
+        "kaolin",
+        "magnesium stearate",
+        "mica",
+        "phenoxyethanol",
+        "polyisobutene",
+        "silica",
+        "talc",
+        "trimethylsiloxysilicate"
+      ]
+    },
+    {
+      "id": "4062300419414",
+      "n_gt": 17,
+      "n_pred": 17,
+      "exact_f1": 0.941,
+      "lev_f1": 0.971,
+      "pred": [
+        "aqua",
+        "behenyl alcohol",
+        "cetearyl alcohol",
+        "cetearyl glucoside",
+        "cocoglycerides",
+        "glycerin",
+        "helianthus annuus hybrid oil",
+        "myristyl alcohol",
+        "myristyl glucoside",
+        "myristyl myristate",
+        "panthenol",
+        "parfum",
+        "phenoxyethanol",
+        "prunus amygdalus dulcis oil",
+        "sodium anisate",
+        "sodium carboxymethyl beta-glucan",
+        "xanthan gum"
+      ]
+    },
+    {
+      "id": "4062300419445",
+      "n_gt": 4,
+      "n_pred": 4,
+      "exact_f1": 1.0,
+      "lev_f1": 1.0,
+      "pred": [
+        "helianthus annuus seed oil",
+        "parfum",
+        "prunus amygdalus dulcis oil",
+        "tocopheryl acetate"
+      ]
+    },
+    {
+      "id": "4063528071484",
+      "n_gt": 16,
+      "n_pred": 5,
+      "exact_f1": 0.381,
+      "lev_f1": 0.381,
+      "pred": [
+        "benzyl salicylate",
+        "glycerin",
+        "guar hydroxypropyltrimonium chloride",
+        "polyglyceryl-4 laurate",
+        "sodium hydrogenated cocoyl methyl isethionate"
+      ]
+    },
+    {
+      "id": "4064666328195",
+      "n_gt": 16,
+      "n_pred": 3,
+      "exact_f1": 0.211,
+      "lev_f1": 0.211,
+      "pred": [
+        "citric acid",
+        "sodium chloride",
+        "sodium tocopheryl phosphate"
+      ]
+    },
+    {
+      "id": "4066447086508",
+      "n_gt": 7,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "4066447241693",
+      "n_gt": 14,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "4066447341881",
+      "n_gt": 19,
+      "n_pred": 11,
+      "exact_f1": 0.6,
+      "lev_f1": 0.645,
+      "pred": [
+        "aqua",
+        "benzoic acid",
+        "decyl glucoside",
+        "dicaprylyl ether",
+        "gluconolactone",
+        "glyceryl linolenate",
+        "hydroxypropyl guar hydroxypropyltrimonium chloride",
+        "lactic acid",
+        "mea-benzoate",
+        "sodium chloride",
+        "sodium hydroxide"
+      ]
+    },
+    {
+      "id": "4066447467451",
+      "n_gt": 7,
+      "n_pred": 5,
+      "exact_f1": 0.667,
+      "lev_f1": 0.667,
+      "pred": [
+        "alcohol denat.",
+        "alpha-isomethyl ionone",
+        "aqua",
+        "geraniol",
+        "prunus armeniaca kernel oil"
+      ]
+    },
+    {
+      "id": "4066447593754",
+      "n_gt": 21,
+      "n_pred": 17,
+      "exact_f1": 0.895,
+      "lev_f1": 0.895,
+      "pred": [
+        "dicalcium phosphate",
+        "dicaprylyl carbonate",
+        "dimethicone",
+        "dimethicone/vinyl dimethicone crosspolymer",
+        "disteardimonium hectorite",
+        "ethylene/propylene copolymer",
+        "glyceryl behenate",
+        "hydrogenated polydecene",
+        "hydrolyzed sodium hyaluronate",
+        "limnanthes alba seed oil",
+        "pentaerythrityl tetra-di-t-butyl hydroxyhydrocinnamate",
+        "phenyl trimethicone",
+        "polyhydroxystearic acid",
+        "silica",
+        "synthetic wax",
+        "tocopherol",
+        "tribehenin"
+      ]
+    },
+    {
+      "id": "4066447641219",
+      "n_gt": 21,
+      "n_pred": 9,
+      "exact_f1": 0.467,
+      "lev_f1": 0.562,
+      "pred": [
+        "benzyl alcohol",
+        "cocamidopropyl betaine",
+        "coco-glucoside",
+        "glycerin",
+        "glyceryl oleate",
+        "hexyl cinnamal",
+        "malus domestica fruit water",
+        "potassium benzoate",
+        "sodium coceth sulfate"
+      ]
+    },
+    {
+      "id": "42420743",
+      "n_gt": 17,
+      "n_pred": 11,
+      "exact_f1": 0.714,
+      "lev_f1": 0.714,
+      "pred": [
+        "aqua",
+        "citral",
+        "coco-glucoside",
+        "glycerin",
+        "glyceryl oleate",
+        "lauryl glucoside",
+        "lavandula angustifolia flower extract",
+        "roe extract",
+        "sodium benzoate",
+        "sodium chloride",
+        "sodium coco-sulfate"
+      ]
+    },
+    {
+      "id": "4255628100076",
+      "n_gt": 22,
+      "n_pred": 15,
+      "exact_f1": 0.757,
+      "lev_f1": 0.789,
+      "pred": [
+        "aloe barbadensis leaf juice",
+        "argania spinosa kernel oil",
+        "avena sativa leaf extract",
+        "betaine",
+        "canola oil",
+        "citric acid",
+        "glycerin",
+        "lauroyl collagen amino acids",
+        "leuconostoc/radish root ferment filtrate",
+        "pentylene glycol",
+        "potassium sorbate",
+        "propanediol",
+        "saccharomyces ferment lysate filtrate",
+        "sodium levulinate",
+        "xanthan gum"
+      ]
+    },
+    {
+      "id": "4260401410808",
+      "n_gt": 12,
+      "n_pred": 10,
+      "exact_f1": 0.909,
+      "lev_f1": 0.909,
+      "pred": [
+        "aqua",
+        "carrageenan",
+        "citric acid",
+        "coco-glucoside",
+        "disodium cocoyl glutamate",
+        "glycerin",
+        "hydroxyacetophenone",
+        "levulinic acid",
+        "pca glyceryl oleate",
+        "sodium levulinate"
+      ]
+    },
+    {
+      "id": "4260602121510",
+      "n_gt": 25,
+      "n_pred": 16,
+      "exact_f1": 0.683,
+      "lev_f1": 0.744,
+      "pred": [
+        "aqua",
+        "cetearyl alcohol",
+        "cetrimonium chloride",
+        "citric acid",
+        "dicaprylyl ether",
+        "distearoylethyl hydroxyethylmonium methosulfate",
+        "distearyldimonium chloride",
+        "glycerin",
+        "hydrolyzed pea protein",
+        "hydrolyzed wheat protein",
+        "isopropyl palmitate",
+        "niacinamide",
+        "panthenol",
+        "parfum",
+        "phenoxyethanol",
+        "tocopherol"
+      ]
+    },
+    {
+      "id": "4260739997651",
+      "n_gt": 20,
+      "n_pred": 12,
+      "exact_f1": 0.625,
+      "lev_f1": 0.625,
+      "pred": [
+        "alcohol",
+        "aloe barbadensis leaf juice powder",
+        "aqua",
+        "butyrospermum parkii butter",
+        "canola oil",
+        "citronellol",
+        "geraniol",
+        "glycerin",
+        "glyceryl stearate",
+        "hexyl cinnamal",
+        "olea europaea fruit oil ethyl ester",
+        "parfum"
+      ]
+    },
+    {
+      "id": "4305615418667",
+      "n_gt": 23,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "5060896573588",
+      "n_gt": 16,
+      "n_pred": 7,
+      "exact_f1": 0.522,
+      "lev_f1": 0.522,
+      "pred": [
+        "crosspolymer",
+        "dehydroacetic acid",
+        "glycerin",
+        "phenoxyethanol",
+        "sodium chloride",
+        "sodium hydroxide",
+        "sodium lauroyl sarcosinate"
+      ]
+    },
+    {
+      "id": "5999566330483",
+      "n_gt": 7,
+      "n_pred": 7,
+      "exact_f1": 1.0,
+      "lev_f1": 1.0,
+      "pred": [
+        "ethylhexyl palmitate",
+        "ethylhexylglycerin",
+        "oleyl erucate",
+        "olive oil peg-7 esters",
+        "peg-20 glyceryl triisostearate",
+        "phenoxyethanol",
+        "synthetic wax"
+      ]
+    },
+    {
+      "id": "9120082221559",
+      "n_gt": 13,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "9120112229043",
+      "n_gt": 48,
+      "n_pred": 38,
+      "exact_f1": 0.86,
+      "lev_f1": 0.86,
+      "pred": [
+        "1,2-hexanediol",
+        "aqua",
+        "benzimidazole diamond amidoethyl urea carbamoyl propyl polymethylsilsesquioxane",
+        "boron nitride",
+        "caprylic/capric triglyceride",
+        "caprylyl glycol",
+        "citric acid",
+        "coco-caprylate/caprate",
+        "cyclopentasiloxane",
+        "dehydroacetic acid",
+        "dextrin palmitate",
+        "dimethicone",
+        "disodium edta",
+        "disteardimonium hectorite",
+        "ethylhexyl methoxycinnamate",
+        "glycerin",
+        "hyaluronic acid",
+        "hydrogen dimethicone",
+        "hydroxystearic/linolenic/oleic polyglycerides",
+        "maltodextrin",
+        "mica",
+        "nannochloropsis oculata extract",
+        "pectin",
+        "pentylene glycol",
+        "phenoxyethanol",
+        "polyester-1",
+        "polyethylene",
+        "propylene carbonate",
+        "silica dimethyl silylate",
+        "sodium benzoate",
+        "sodium chloride",
+        "sodium hyaluronate",
+        "spleen extract",
+        "talc",
+        "tocopheryl acetate",
+        "trehalose",
+        "xanthan gum",
+        "zinc oxide"
+      ]
+    },
+    {
+      "id": "99999",
+      "n_gt": 23,
+      "n_pred": 9,
+      "exact_f1": 0.562,
+      "lev_f1": 0.562,
+      "pred": [
+        "alpha-isomethyl ionone",
+        "benzyl salicylate",
+        "carthamus tinctorius seed oil",
+        "cinnamyl alcohol",
+        "coumarin",
+        "ethylhexyl stearate",
+        "hexyl cinnamal",
+        "limonene",
+        "linalool"
+      ]
+    },
+    {
+      "id": "99999_1",
+      "n_gt": 12,
+      "n_pred": 10,
+      "exact_f1": 0.909,
+      "lev_f1": 0.909,
+      "pred": [
+        "butylene glycol",
+        "ethylhexylglycerin",
+        "glycereth-26",
+        "niacinamide",
+        "pentylene glycol",
+        "phenoxyethanol",
+        "propanediol",
+        "sarcosine",
+        "xanthan gum",
+        "zinc pca"
+      ]
+    },
+    {
+      "id": "99999_11",
+      "n_gt": 25,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "99999_12",
+      "n_gt": 19,
+      "n_pred": 12,
+      "exact_f1": 0.581,
+      "lev_f1": 0.667,
+      "pred": [
+        "bentonite",
+        "betaine",
+        "butyrospermum parkii butter",
+        "glycerin",
+        "hydrogenated castor oil stearate",
+        "illite",
+        "kaolin",
+        "montmorillonite",
+        "olea europaea fruit oil",
+        "sodium chloride",
+        "stearic acid",
+        "triticum vulgare starch"
+      ]
+    },
+    {
+      "id": "99999_15",
+      "n_gt": 15,
+      "n_pred": 1,
+      "exact_f1": 0.125,
+      "lev_f1": 0.125,
+      "pred": [
+        "triethanolamine"
+      ]
+    },
+    {
+      "id": "99999_3",
+      "n_gt": 20,
+      "n_pred": 14,
+      "exact_f1": 0.706,
+      "lev_f1": 0.743,
+      "pred": [
+        "avocadamidopropyl betaine",
+        "benzyl salicylate",
+        "citric acid",
+        "coco-glucoside",
+        "coumarin",
+        "hexyl cinnamal",
+        "hydroxycitronellal",
+        "linalool",
+        "polyquaternium-7",
+        "potassium sorbate",
+        "propylene glycol",
+        "sodium benzoate",
+        "sodium chloride",
+        "sodium glycinate"
+      ]
+    },
+    {
+      "id": "99999_4",
+      "n_gt": 22,
+      "n_pred": 0,
+      "exact_f1": 0,
+      "lev_f1": 0,
+      "pred": []
+    },
+    {
+      "id": "99999_7",
+      "n_gt": 23,
+      "n_pred": 19,
+      "exact_f1": 0.857,
+      "lev_f1": 0.884,
+      "pred": [
+        "acrylates/c10-30 alkyl acrylate crosspolymer",
+        "acrylic acid/vp crosspolymer",
+        "alcohol",
+        "alpha-isomethyl ionone",
+        "benzyl salicylate",
+        "citronellol",
+        "dmdm hydantoin",
+        "geraniol",
+        "glycerin",
+        "helianthus annuus seed oil",
+        "hexyl cinnamal",
+        "hydrolyzed quinoa",
+        "linalool",
+        "mica",
+        "panthenol",
+        "phenoxyethanol",
+        "titanium dioxide nano",
+        "tocopheryl acetate",
+        "triethanolamine"
+      ]
+    }
+  ]
+}

@@ -108,3 +108,84 @@ Switch engine/matcher without code edits via `config/pipeline_config.yml` or env
 
 `python-doctr==1.0.1`, `symspellpy==6.9.0` (both on the existing torch+cpu / numpy 2 stack).
 Optional alternatives: `rapidocr==3.8.4 onnxruntime`, `rapidfuzz==3.14.5`.
+
+---
+
+# Real-world full-label robustness (follow-up)
+
+The curated 59-image set is bare, pre-cropped ingredient panels. Real product photos are harder:
+the panel is surrounded by marketing and usage text on a curved surface. On a NIVEA Sun spray
+(`data/realworld/`, EAN 4006000130996, 34 ingredients) the docTR pipeline scored exact F1 **0.55**
+with **11 false positives** — including, dangerously, `octocrylene` (matched from the *"free of …
+Octocrylene"* claim), `melanin`/`mel` (from "Pro-Melanin extract") and `serine`/`bittern`.
+
+Fixes (each measured; all CPU, < 8 GB):
+
+1. **Reading order.** docTR emits whole-line boxes, so the correct order is a top-to-bottom sort.
+   The DFS line-clustering (built for EasyOCR's sub-line boxes) interleaved the marketing block
+   with the ingredient panel, scrambling multi-word names and breaking the region cut. Sorting
+   docTR lines by box-y fixed it — and independently lifted the **59-set 0.632 → 0.648**.
+2. **Region isolation** (`isolate_region`, default on). Keep only the text from the
+   "Ingredients:"/"Inhaltsstoffe:" marker onward (tolerant to the OCR I/l/1 confusion); drop the
+   marketing/usage prose before it. No marker found (bare panels) → keep everything, so the 59-set
+   is unaffected. This removes every marketing false positive.
+3. **Segment matcher** (`match_strategy: segment`). Comma-split the isolated region and fuzzy-match
+   each whole segment (rapidfuzz `token_sort_ratio`, cutoff 80) — robust to OCR errors that garble
+   multi-word names ('Tcopheryl Acetate', 'Capernicia Cerilera Cero') where the Trie's prefix match
+   fails. Strong on full labels (NIVEA 0.727) but weak on bare panels (0.476, fragile to delimiter
+   style), so it must not be applied everywhere.
+4. **Auto routing** (`match_strategy: auto`, default). Marker presence alone does NOT distinguish a
+   full label from a cropped panel — panels often carry an "Ingredients:" header too. The
+   distinguishing signal is the **amount of pre-marker prose dropped**: a real label buries the list
+   under many marketing lines (NIVEA drops ~19), a panel drops ~0. Route to the segment matcher only
+   when `>= segment_min_dropped` (default 5) lines preceded the marker, else use the Trie.
+
+Routing measured on both sets (exact F1):
+
+| strategy | 59-set (panels) | NIVEA (full label) |
+|---|---|---|
+| trie | 0.648 | 0.690 |
+| segment | 0.476 | 0.727 |
+| **auto (min_dropped=5)** | **0.648** | **0.727** |
+
+Result — both criteria met with no regression:
+
+| | exact F1 | marketing FPs | peak RSS |
+|---|---|---|---|
+| NIVEA before | 0.55 | 5 (incl. octocrylene) | — |
+| **NIVEA after (auto)** | **0.727** | **0** | 1.5 GB |
+| 59-set (regression guard) | 0.632 → **0.648** | n/a | 2.6 GB |
+
+The one remaining NIVEA false positive (`glycol`) is an ingredient fragment, not marketing text.
+Reproduce the real-world set with `BENCH_GT_DIR=data/realworld/ground_truth
+BENCH_IMG_DIR=data/realworld/images python benchmark.py rw`.
+
+---
+
+# Scraped real-world benchmark (100 validated panels)
+
+To measure on real product photos beyond the curated set, a test set was scraped from
+**Open Beauty Facts** (open ODbL data). OBF's `ingredients` image is frequently mislabelled
+(a product front, not the panel) — a first naive scrape of 40 was 68 % junk and scored only
+exact-F1 0.515. So `scrape_obf.py` **OCR-validates every candidate**, keeping it only when the
+ground-truth ingredients are actually visible in the image, and **normalizes the GT** (de-dupe,
+drop may-contain/parentheses; multilingual `Aqua/Water/Eau` → one `aqua`, applied symmetrically
+to predictions and GT so it is a fair canonicalization, see `benchmark.canon`).
+
+Result on 100 validated panels (CPU, docTR + auto):
+
+| set | exact-F1 | levenshtein-F1 |
+|---|---|---|
+| naive scrape (40, 68 % not panels) | 0.515 | 0.530 |
+| validated (50) | 0.685 | 0.711 |
+| **validated + GT-normalized (100)** | **0.744** | **0.769** |
+| └ per-panel median | 0.788 | **0.819** |
+
+**Ceiling analysis** (1010 GT ingredients on the clean set): 66 % matched, 17 % visible in the OCR
+but unmatched (recovering them costs more false positives than true positives — net-negative, so
+the Trie matcher stays the optimum), 17 % not legible in the OCR at all. The ~0.74 exact-F1 /
+0.82 median levenshtein-F1 is therefore the realistic CPU ceiling on real-world panels; closing
+to 95 % requires VLM OCR (Qwen2.5-VL / GPT-4o-Vision) + LLM dictionary correction, i.e. GPU/cloud.
+
+Reproduce: `python scrape_obf.py 100` then
+`BENCH_GT_DIR=data/scraped/ground_truth BENCH_IMG_DIR=data/scraped/images python benchmark.py scraped100`.

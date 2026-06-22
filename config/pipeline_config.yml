@@ -29,6 +29,20 @@ postprocessing:
   # Word-level typo correction: faiss (semantic) | symspell (edit-distance over the INCI vocab).
   # SymSpell added +0.012 exact-F1 and removes a transformer call path. Override with TYPO_BACKEND.
   typo_backend: symspell
+  # On real product photos the ingredient panel is surrounded by marketing/usage text (e.g.
+  # "free of ... Octocrylene") that otherwise gets matched to INCI names -> false positives.
+  # When true, keep only the text from the "Ingredients:"/"Inhaltsstoffe:" marker onward.
+  # No marker found (bare cropped panels) -> keep everything, so marker-less inputs are unaffected.
+  isolate_region: true
+  # Ingredient extraction strategy: auto | trie | segment.
+  #   trie    = longest-prefix Trie + matcher (best on bare cropped panels: 59-set 0.648).
+  #   segment = comma-split the region, fuzzy-match each whole segment (robust to garbled multi-word
+  #             names on curved real-world labels: NIVEA 0.727, but weak on bare panels: 0.476).
+  #   auto    = segment when an "Ingredients:" marker was found (= real-world full label), else trie.
+  # 'auto' picks the winning matcher per image type. Override with MATCH_STRATEGY.
+  match_strategy: auto
+  segment_threshold: 80  # rapidfuzz token_sort_ratio (0-100) cutoff for accepting a segment match
+  segment_min_dropped: 5  # 'auto' uses segment only when >= this many lines preceded the marker
 
 evaluation:
   method: levenshtein # levenstein or exact

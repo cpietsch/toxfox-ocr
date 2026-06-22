@@ -1,0 +1,57 @@
+{
+  "summary": {
+    "label": "final_realworld_auto",
+    "n_cases": 1,
+    "metrics": {
+      "exact_f1": 0.7273,
+      "exact_acc": 0.5882,
+      "lev_f1": 0.7273,
+      "lev_acc": 0.5882
+    },
+    "build_secs": 4.8,
+    "infer_secs_total": 5.5,
+    "infer_secs_mean": 5.46,
+    "peak_rss_gb": 1.54,
+    "config": {
+      "ocr_engine": "doctr",
+      "match_backend": "faiss",
+      "typo_backend": "symspell",
+      "embed_model": "all-MiniLM-L6-v2"
+    }
+  },
+  "per_image": [
+    {
+      "id": "4006000130996",
+      "n_gt": 34,
+      "n_pred": 21,
+      "exact_f1": 0.727,
+      "exact_acc": 0.588,
+      "lev_f1": 0.727,
+      "lev_acc": 0.588,
+      "secs": 5.46,
+      "pred": [
+        "alcohol denat.",
+        "alpha-isomethyl ionone",
+        "bis-ethylhexyloxyphenol methoxyphenyl triazine",
+        "butylene glycol dicaprylate/dicaprate",
+        "c12-15 alkyl benzoate",
+        "c18-38 alkyl hydroxystearoyl stearate",
+        "cellulose gum",
+        "cetyl palmitate",
+        "citronellol",
+        "dibutyl adipate",
+        "diethylamino hydroxybenzoyl hexyl benzoate",
+        "ethylhexyl triazone",
+        "glycerin",
+        "glycol",
+        "glycyrrhetinic acid",
+        "hydrogenated rapeseed oil",
+        "isopropyl palmitate",
+        "microcrystalline cellulose",
+        "sodium hydroxide",
+        "tocopheryl acetate",
+        "xanthan gum"
+      ]
+    }
+  ]
+}

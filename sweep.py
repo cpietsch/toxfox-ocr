@@ -30,24 +30,29 @@ def peak_rss_gb():
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024 / 1024
 
 
+from benchmark import canon  # symmetric multilingual-synonym canonicalization (Aqua/Water -> aqua)
+
+
 def norm(items):
-    return sorted([str(x).lower().strip().replace("*", "") for x in items])
+    return sorted({canon(x) for x in items if canon(x)})
 
 
-# (label, match_backend, typo_backend)
+# (label, match_strategy, segment_threshold)  -- matcher/typo fixed at the chosen defaults
+# (label, match_strategy, segment_threshold, segment_min_dropped)
 CONFIGS = [
-    ("faiss_faiss", "faiss", "faiss"),
-    ("rapidfuzz_faiss", "rapidfuzz", "faiss"),
-    ("faiss_symspell", "faiss", "symspell"),
-    ("rapidfuzz_symspell", "rapidfuzz", "symspell"),
+    ("trie", "trie", 80, 0),
+    ("seg82", "segment", 82, 0),
+    ("seg86", "segment", 86, 0),
+    ("seg90", "segment", 90, 0),
+    ("seg93", "segment", 93, 0),
 ]
 
 
 def main():
     engine = os.environ.get("OCR_ENGINE", "doctr")
     engine_label = os.environ.get("SWEEP_LABEL", engine)
-    gt_dir = Path(default_config.ground_truth_path)
-    img_dir = Path(default_config.image_path)
+    gt_dir = Path(os.environ.get("BENCH_GT_DIR", default_config.ground_truth_path))
+    img_dir = Path(os.environ.get("BENCH_IMG_DIR", default_config.image_path))
     cases = []
     for gt_file in sorted(gt_dir.glob("*.yaml")):
         stem = gt_file.stem
@@ -81,9 +86,10 @@ def main():
     log.info("OCR pass done in %.1fs, peak %.2f GB", time.time() - t0, peak_rss_gb())
 
     # ---- evaluate each postprocessing config on the cached tokens ----
-    for label, match_b, typo_b in CONFIGS:
-        post.match_backend = match_b
-        post.token_cleaner.typo_backend = typo_b
+    for label, strategy, seg_thr, min_drop in CONFIGS:
+        post.match_strategy = strategy
+        post.segment_threshold = seg_thr
+        post.segment_min_dropped = min_drop
         sums = {"exact_f1": 0.0, "exact_acc": 0.0, "lev_f1": 0.0, "lev_acc": 0.0}
         per_image = []
         for stem, img_path, gt in cases:
@@ -106,7 +112,8 @@ def main():
         full_label = f"{engine_label}_{label}"
         summary = {"label": full_label, "n_cases": n, "metrics": metrics,
                    "peak_rss_gb": round(peak_rss_gb(), 2),
-                   "config": {"ocr_engine": engine, "match_backend": match_b, "typo_backend": typo_b}}
+                   "config": {"ocr_engine": engine, "match_strategy": strategy,
+                              "segment_threshold": seg_thr, "isolate_region": post.isolate_region}}
         out = Path(__file__).resolve().parent / "benchmark_results" / f"{full_label}.json"
         json.dump({"summary": summary, "per_image": per_image}, open(out, "w"), indent=2)
         log.info("[%s] exF1=%.4f exAcc=%.4f lvF1=%.4f  -> %s",

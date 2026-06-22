@@ -16,6 +16,14 @@ warnings.filterwarnings("ignore")
 
 config = pipeline_config.postprocessing
 
+# Marker that introduces an INCI list on a label ("Ingredients:", "Inhaltsstoffe:", and a few
+# EU-language variants). The leading-letter class tolerates the common OCR confusion of I/l/1/|.
+_INGREDIENT_MARKER = re.compile(r"(?i)(?:[il1|!]ngredient|ingr[ée]dient|inhaltsstoff|ingredien[tz])")
+# Strips a line up to and including the marker (+ optional colon), leaving the list remainder.
+_MARKER_STRIP = re.compile(
+    r"(?i)^.*?(?:[il1|!]ngredients?|ingr[ée]dients?|inhaltsstoffe?|ingredien[tz][a-z]*)\s*[:.\-]?\s*"
+)
+
 
 class FAISSIndexer:
     def __init__(self):
@@ -327,6 +335,25 @@ class PostProcessor:
         self.match_backend = (os.environ.get("MATCH_BACKEND") or (_mb if isinstance(_mb, str) else "faiss")).lower()
         self.rapidfuzz_threshold = float(os.environ.get("RAPIDFUZZ_THRESHOLD", "85"))
 
+        # Isolate the ingredient region at the "Ingredients:" marker (drops surrounding
+        # marketing/usage text on real product photos). Precedence: ISOLATE_REGION env > config > on.
+        _ir = config.isolate_region
+        _env_ir = os.environ.get("ISOLATE_REGION")
+        self.isolate_region = (
+            _env_ir.lower() not in ("0", "false", "no", "off") if _env_ir is not None
+            else (_ir if isinstance(_ir, bool) else True)
+        )
+
+        # Ingredient extraction strategy: "trie" (default) | "segment". Precedence: env > config.
+        _ms = config.match_strategy
+        self.match_strategy = (os.environ.get("MATCH_STRATEGY") or (_ms if isinstance(_ms, str) else "trie")).lower()
+        _st = config.segment_threshold
+        self.segment_threshold = float(os.environ.get("SEGMENT_THRESHOLD", _st if isinstance(_st, (int, float)) else 90))
+        # 'auto' routes to the segment matcher only when at least this many lines were dropped
+        # before the marker (i.e. a real full-label photo, not a bare cropped panel with a header).
+        _smd = config.segment_min_dropped
+        self.segment_min_dropped = int(os.environ.get("SEGMENT_MIN_DROPPED", _smd if isinstance(_smd, (int, float)) else 5))
+
         self.faiss_path = default_config.faiss_path
         self.pollutants_path = default_config.pollutants_path_simple
         self.inci_path = default_config.inci_path_simple
@@ -374,7 +401,71 @@ class PostProcessor:
     def find_pollutants(self, synonym):
         return self.synonym_to_ingredient.get(synonym.strip(), None)
 
+    def _isolate_ingredient_region(self, tokens: list[str]) -> list[str]:
+        """Keep only OCR lines from the 'Ingredients:'/'Inhaltsstoffe:' marker onward.
+
+        Real product photos surround the ingredient panel with marketing/usage text (e.g. a
+        'free of ... Octocrylene' claim, a 'Pro-Melanin extract' slogan) whose words get matched
+        to INCI names -> dangerous false positives. The INCI list is conventionally introduced by
+        an 'Ingredients:' marker, so drop everything before it. If no marker is found (the curated
+        eval crops are bare panels), return the tokens unchanged so marker-less inputs are unaffected.
+        """
+        for i, line in enumerate(tokens):
+            if _INGREDIENT_MARKER.search(line):
+                remainder = _MARKER_STRIP.sub("", line, count=1).strip()
+                rest = list(tokens[i + 1:])
+                return (([remainder] + rest) if remainder else rest), i  # i = lines dropped before marker
+        return list(tokens), -1
+
+    def _compute_pollutants(self, ingredients: list[str]) -> list[str]:
+        if self.detection_type in ["pollutants", "both"] and len(ingredients) > 0:
+            return remove_duplicates(
+                [self.find_pollutants(ing) for ing in ingredients if self.find_pollutants(ing) is not None]
+            )
+        return []
+
+    def _segment_get_ingredients(self, tokens: list[str]) -> dict:
+        """Comma-split the (isolated) region and fuzzy-match each whole segment to an INCI name.
+
+        OCR garbles multi-word names on curved labels ('Tcopheryl Acetate', 'Capernicia Cerilera
+        Cero'), which the Trie's longest-prefix match drops or reduces to a wrong fragment. Matching
+        the whole comma-delimited segment with rapidfuzz (char-aware, length-robust) recovers them.
+        Lines are joined first because the OCR wraps the list mid-name across lines.
+        """
+        from rapidfuzz import fuzz, process
+
+        blob = " ".join(tokens)
+        matched: list[str] = []
+        for seg in re.split(r"[,;•·]", blob):
+            s = re.sub(r"\bci\s*\d{3,5}\b", " ", seg.lower())  # drop CI colour-index codes
+            s = re.sub(r"[^a-z0-9/+\- ]", " ", s)  # keep INCI-ish characters only
+            s = re.sub(r"\s+", " ", s).strip()
+            if len(s) < 3:
+                continue
+            # token_sort_ratio compares whole strings (no substring shortcut), so a long garbled
+            # segment can't spuriously match a tiny INCI name (imidazole/phenol). The length guard
+            # rejects matches far shorter than the segment (another fragment-FP source).
+            m = process.extractOne(s, self.combined_tokens, scorer=fuzz.token_sort_ratio)
+            if m and m[1] >= self.segment_threshold and len(m[0]) >= 0.6 * len(s):
+                matched.append(m[0])
+        ingredients = remove_duplicates(matched)
+        return {"ingredients": ingredients, "pollutants": self._compute_pollutants(ingredients)}
+
     def get_ingredients(self, tokens: list[str]) -> list[str]:
+        marker_idx = -1
+        if self.isolate_region:
+            tokens, marker_idx = self._isolate_ingredient_region(tokens)
+        strategy = self.match_strategy
+        if strategy == "auto":
+            # Route by how much pre-marker text was discarded. A real full-label photo buries the
+            # list under many marketing/usage lines (NIVEA drops ~19) -> the segment matcher, robust
+            # to garbled multi-word names, wins. A bare cropped panel often still has an
+            # "Ingredients:" header but ~no text before it -> the Trie matcher is stronger and the
+            # segment matcher's comma-splitting is fragile to panel delimiter styles. The amount of
+            # dropped prose (not mere marker presence) is what distinguishes the two.
+            strategy = "segment" if marker_idx >= self.segment_min_dropped else "trie"
+        if strategy == "segment":
+            return self._segment_get_ingredients(tokens)
         cleaned_tokens = self.token_cleaner.clean_token(tokens)
 
         results = {"ingredients": [], "pollutants": []}

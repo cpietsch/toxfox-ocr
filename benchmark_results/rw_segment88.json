@@ -1,0 +1,50 @@
+{
+  "summary": {
+    "label": "rw_segment88",
+    "n_cases": 1,
+    "metrics": {
+      "exact_f1": 0.5556,
+      "exact_acc": 0.4412,
+      "lev_f1": 0.5556,
+      "lev_acc": 0.4412
+    },
+    "peak_rss_gb": 1.58,
+    "config": {
+      "ocr_engine": "doctr",
+      "match_strategy": "segment",
+      "segment_threshold": 88,
+      "isolate_region": true
+    }
+  },
+  "per_image": [
+    {
+      "id": "4006000130996",
+      "n_gt": 34,
+      "n_pred": 20,
+      "exact_f1": 0.556,
+      "lev_f1": 0.556,
+      "pred": [
+        "alcohol",
+        "alcohol denat.",
+        "c12-15 alkyl benzoate",
+        "c18-38 alkyl hydroxystearoyl stearate",
+        "cellulose gum",
+        "cetyl palmitate",
+        "citronellol",
+        "dibutyl adipate",
+        "glycerin",
+        "glycol",
+        "glycyrrhetinic acid",
+        "hydrogenated rapeseed oil",
+        "imidazole",
+        "isopropyl palmitate",
+        "microcrystalline cellulose",
+        "none",
+        "phenol",
+        "sodium hydroxide",
+        "tocopheryl acetate",
+        "xanthan gum"
+      ]
+    }
+  ]
+}

@@ -36,18 +36,35 @@ def peak_rss_gb() -> float:
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024 / 1024
 
 
+# Multilingual synonyms collapsed to one INCI token so a panel's "Aqua/Water/Eau" (one
+# substance listed in several languages) isn't scored as several. Applied symmetrically to
+# predictions and ground truth, so it is a fair canonicalization, not score inflation.
+_WATER = {"water", "eau", "wasser", "acqua", "agua"}
+
+
+def canon(t: str) -> str:
+    t = str(t).lower().strip().replace("*", "")
+    if t in _WATER or t.startswith("aqua/") or t.startswith("aqua /"):
+        return "aqua"
+    if t == "fragrance" or t in ("parfum/fragrance", "fragrance/parfum"):
+        return "parfum"
+    return t
+
+
 def normalize_gt(items):
-    return sorted([gt.lower().strip().replace("*", "") for gt in items])
+    return sorted({canon(x) for x in items if canon(x)})
 
 
 def normalize_pred(items):
-    return sorted([p.lower().strip() for p in items])
+    return sorted({canon(x) for x in items if canon(x)})
 
 
 def main():
     label = sys.argv[1] if len(sys.argv) > 1 else "run"
-    gt_dir = Path(default_config.ground_truth_path)
-    img_dir = Path(default_config.image_path)
+    # Eval set is overridable (BENCH_GT_DIR/BENCH_IMG_DIR) so the real-world set
+    # (data/realworld) can be measured separately from the curated 59-image set.
+    gt_dir = Path(os.environ.get("BENCH_GT_DIR", default_config.ground_truth_path))
+    img_dir = Path(os.environ.get("BENCH_IMG_DIR", default_config.image_path))
 
     # Pair every ground-truth file with its image.
     cases = []
@@ -112,6 +129,8 @@ def main():
         "peak_rss_gb": round(peak_rss_gb(), 2),
         "config": {
             "ocr_engine": pipeline.ocr.engine,
+            "match_strategy": pipeline.postprocessor.match_strategy,
+            "isolate_region": pipeline.postprocessor.isolate_region,
             "match_backend": pipeline.postprocessor.match_backend,
             "typo_backend": pipeline.postprocessor.token_cleaner.typo_backend,
             "embed_model": pipeline.postprocessor.indexer.model_name,

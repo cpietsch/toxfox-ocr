@@ -238,6 +238,10 @@ precedence over the file):
 | `ocr.doctr_reco` | `crnn_vgg16_bn` \| `parseq` | `crnn_vgg16_bn` | `DOCTR_RECO` |
 | `postprocessing.match_backend` | `faiss` \| `rapidfuzz` | `faiss` | `MATCH_BACKEND` |
 | `postprocessing.typo_backend` | `faiss` \| `symspell` | `symspell` | `TYPO_BACKEND` |
+| `postprocessing.isolate_region` | `true` \| `false` | `true` | `ISOLATE_REGION` |
+| `postprocessing.match_strategy` | `auto` \| `trie` \| `segment` | `auto` | `MATCH_STRATEGY` |
+| `postprocessing.segment_threshold` | int 0-100 | `80` | `SEGMENT_THRESHOLD` |
+| `postprocessing.segment_min_dropped` | int | `5` | `SEGMENT_MIN_DROPPED` |
 | `postprocessing.FAISSIndexer_model_name` | any sentence-transformers model | `all-MiniLM-L6-v2` | `EMBED_MODEL` |
 | `preprocessing.max_pixels` | int (`0` disables) | `3000000` | — |
 

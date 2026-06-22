@@ -1,0 +1,60 @@
+{
+  "summary": {
+    "label": "realworld_isolated",
+    "n_cases": 1,
+    "metrics": {
+      "exact_f1": 0.6897,
+      "exact_acc": 0.5882,
+      "lev_f1": 0.6897,
+      "lev_acc": 0.5882
+    },
+    "build_secs": 4.8,
+    "infer_secs_total": 9.1,
+    "infer_secs_mean": 9.15,
+    "peak_rss_gb": 1.55,
+    "config": {
+      "ocr_engine": "doctr",
+      "match_backend": "faiss",
+      "typo_backend": "symspell",
+      "embed_model": "all-MiniLM-L6-v2"
+    }
+  },
+  "per_image": [
+    {
+      "id": "4006000130996",
+      "n_gt": 34,
+      "n_pred": 24,
+      "exact_f1": 0.69,
+      "exact_acc": 0.588,
+      "lev_f1": 0.69,
+      "lev_acc": 0.588,
+      "secs": 9.15,
+      "pred": [
+        "alcohol",
+        "alpha-isomethyl ionone",
+        "benzyl alcohol",
+        "c12-15 alkyl benzoate",
+        "c18-38 alkyl hydroxystearoyl stearate",
+        "cellulose gum",
+        "citronellol",
+        "dibutyl adipate",
+        "diethylamine",
+        "edta",
+        "ethylhexyl triazone",
+        "glycerin",
+        "glycol",
+        "glycyrrhetinic acid",
+        "hydrogenated rapeseed oil",
+        "isopropyl palmitate",
+        "linalyl acetate",
+        "microcrystalline cellulose",
+        "parfum",
+        "phenylbenzimidazole sulfonic acid",
+        "sodium hydroxide",
+        "tocopheryl acetate",
+        "vanillin",
+        "xanthan gum"
+      ]
+    }
+  ]
+}
