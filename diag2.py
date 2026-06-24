@@ -60,7 +60,7 @@ def main():
             for g in fn:
                 if S.canon(g) not in dict_canon:
                     fn_cats["not_in_dict"] += 1
-                    if len(fn_examples["not_in_dict"]) < 40: fn_examples["not_in_dict"].append((stem, g))
+                    if len(fn_examples["not_in_dict"]) < 80: fn_examples["not_in_dict"].append((stem, g))
                     continue
                 g_ns = ns(g)
                 sc = fuzz.partial_ratio(g_ns, blob) if len(g_ns) >= 5 else 0
@@ -69,7 +69,7 @@ def main():
                     if len(fn_examples["ocr_visible"]) < 60: fn_examples["ocr_visible"].append((stem, g, int(sc)))
                 else:
                     fn_cats["ocr_missing"] += 1
-                    if len(fn_examples["ocr_missing"]) < 40: fn_examples["ocr_missing"].append((stem, g, int(sc)))
+                    if len(fn_examples["ocr_missing"]) < 80: fn_examples["ocr_missing"].append((stem, g, int(sc)))
             for p in fp:
                 m = process.extractOne(p, gt, scorer=fuzz.ratio) if gt else (None, 0, 0)
                 if m and m[1] >= 85:
@@ -77,7 +77,7 @@ def main():
                     if len(fp_examples["near_gt"]) < 40: fp_examples["near_gt"].append((stem, p, m[0], int(m[1])))
                 else:
                     fp_cats["spurious"] += 1
-                    if len(fp_examples["spurious"]) < 40: fp_examples["spurious"].append((stem, p))
+                    if len(fp_examples["spurious"]) < 80: fp_examples["spurious"].append((stem, p))
             worst.append((exF1s[-1], stem, len(gt), len(preds), fn, fp))
         n = len(gts)
         P, R = TP/(TP+FP) if TP+FP else 0, TP/(TP+FN) if TP+FN else 0
@@ -95,6 +95,12 @@ def main():
         print(f"  --- near_gt FP (canon/variant) [{len(fp_examples['near_gt'])}] ---")
         for stem, p, g, sc in fp_examples["near_gt"]:
             print(f"      {stem[:24]:24} pred='{p}' ~ gt='{g}' ({sc})")
+        print(f"  --- spurious FP (precision drain) [{len(fp_examples['spurious'])}] ---")
+        for stem, p in fp_examples["spurious"]:
+            print(f"      {stem[:24]:24} '{p}'")
+        print(f"  --- ocr_missing FN (OCR-recall headroom, absent from OCR) [{len(fn_examples['ocr_missing'])}] ---")
+        for stem, g, sc in fn_examples["ocr_missing"]:
+            print(f"      {stem[:24]:24} '{g}' (sc={sc})")
         print()
 
 

@@ -26,6 +26,13 @@ from zug_toxfox.modules.postprocessing import FAISSIndexer, PostProcessor, _MARK
 SETS = {"scraped": "data/scraped/ground_truth", "curated": "data/ground_truth"}
 
 _WATER = {"water", "eau", "wasser", "acqua", "agua"}
+# Purified-water phrases that are all just 'aqua' (INCI). Enumerated, NOT a blanket 'contains water'
+# rule -- 'rose water'/'flower water'/floral hydrosols are DISTINCT ingredients and must not collapse.
+_AQUA_PHRASES = {
+    "purified water", "demineralized water", "demineralised water", "deionized water",
+    "deionised water", "distilled water", "aqua purificata", "gereinigtes wasser",
+    "eau purifiee", "eau purifiée", "eau demineralisee", "eau déminéralisée",
+}
 
 # --- Symmetric INCI canonicalization -------------------------------------------------------------
 # The pipeline emits canonical INCI names (its matcher only ever outputs dictionary entries). The
@@ -89,15 +96,16 @@ def inci_snap(t: str) -> str:
     from rapidfuzz import fuzz, process
     hit = process.extractOne(key, _inci_ns_keys, scorer=fuzz.ratio, score_cutoff=_SNAP_CUTOFF)
     if hit and 0.85 <= len(hit[0]) / len(key) <= 1.18:
-        cand = hit[0]
-        # Refuse to ADD a trailing qualifier we cannot verify: bare 'butyrospermum parkii' must NOT
-        # snap to '... parkii oil' (shea oil != shea butter != bare extract -- a guess, not the same
-        # identity). A candidate that merely extends the token with extra trailing chars is exactly
-        # this case. Truncations ('sodium chloridehc' -> 'sodium chloride') and internal typo fixes
-        # are kept (there the token is the longer/equal side, so this guard does not trigger).
-        if cand.startswith(key) and len(cand) > len(key):
+        cand_name = _inci_ns[hit[0]]
+        # Refuse to ADD a trailing qualifier WORD we cannot verify: bare 'butyrospermum parkii' must
+        # NOT snap to '... parkii oil' (shea oil != shea butter != bare extract -- a guess, not the
+        # same identity). Word-level test: block only when the candidate is the token's words plus
+        # extra trailing word(s). A trailing-CHARACTER typo on the last word ('cocamidopropyl betain'
+        # -> '... betaine') is NOT a word addition and is kept, as are truncations.
+        tw, cw = t.split(), cand_name.split()
+        if len(cw) > len(tw) and cw[:len(tw)] == tw:
             return t
-        return _inci_ns[cand]
+        return cand_name
     return t
 
 
@@ -106,17 +114,27 @@ def canon(t: str) -> str:
     t = str(t).lower().strip().replace("*", "")
     t = re.sub(r"\([^)]*\)", "", t)            # drop parentheticals: 'aqua (water)' -> 'aqua'
     t = re.sub(r"\s+", " ", t).strip().strip(".").strip()   # collapse spaces, drop trailing period
-    if t in _WATER or t.startswith("aqua/") or t.startswith("aqua /") or t.startswith("aqua "):
+    if (t in _WATER or t in _AQUA_PHRASES or t.startswith("aqua/")
+            or t.startswith("aqua /") or t.startswith("aqua ")):
         return "aqua"
     if t in ("fragrance", "parfum/fragrance", "fragrance/parfum", "parfum / fragrance"):
         return "parfum"
     return inci_snap(t)
 
 
-# ingredient-agnostic prose/junk markers (NOT dict-based, so this never inflates recall)
+# ingredient-agnostic prose/junk markers (NOT dict-based, so this never inflates recall). These are
+# label boilerplate -- manufacturer/address/contact/legal/usage prose that the raw OBF text glues
+# into the "ingredients" field. None of these substrings occur in an INCI ingredient name, so
+# dropping a GT token that contains one removes a non-ingredient FN; it never deletes a real
+# ingredient and never touches predictions.
 _JUNK = re.compile(r"(?i)caution|questions|call toll|1-?800|www\.|\.com|poison|medical help|"
                    r"art\.?-?\s?no|grossesse|chirurg|régime|teneurs|enthält|verwende|p flaschen|dermatolog|"
-                   r"avoid contact|keep out|&gt|&lt|&amp|cont\.?\s*net|floz|recicla|botella|reciclable")
+                   r"avoid contact|keep out|&gt|&lt|&amp|&quot|cont\.?\s*net|floz|recicla|botella|reciclable|"
+                   r"manufactur|distribut|trademark|\bltd\b|\blimited\b|\bgmbh\b|\bs\.?a\.?r\.?l\b|"
+                   r"consumer care|customer care|care line|helpline|made in|imported|\btel\b|\bfax\b|"
+                   r"\bp\.?\s?o\.?\s?box\b|\bbox\s*\d|external use|discontinue|\breuse\b|\brecycle\b|"
+                   r"\bwarning\b|plot no|industrial area|net\s*wt|expiry|best before|batch\s*no|"
+                   r"strasse|\bstr\.\b")
 
 
 def clean_gt_v2(raw: str) -> list[str]:
