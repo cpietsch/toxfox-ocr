@@ -546,7 +546,7 @@ class PostProcessor:
         return {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
 
     @staticmethod
-    def _drop_fragments(ings: list[str]) -> list[str]:
+    def _drop_fragments(ings: list[str], protected: set | frozenset = frozenset()) -> list[str]:
         """Drop a predicted ingredient that is a whole-word sub-phrase of another prediction.
 
         The Trie's longest-prefix match greedily emits short dictionary words that are really
@@ -555,10 +555,22 @@ class PostProcessor:
         '... parkii butter'). When the longer name is also predicted, the short one is a spurious
         FP -> drop it. Word-boundary containment only, so 'aqua' is never dropped by 'aqua-something'
         unless that token is actually present.
+
+        BUT real INCI lists routinely contain BOTH a base ingredient and a derivative of it as
+        SEPARATE list items ('dimethicone' + 'hydrogen dimethicone' + 'cetyl peg/ppg-10/1
+        dimethicone'; 'silica' + 'hydrated silica'). Blindly dropping the base then costs a real TP.
+        The window matcher is span-consuming (greedy longest match that advances past what it
+        accepts), so when it emits the base name from its OWN delimited span -- distinct from the
+        span of the longer name -- that base is a genuine separate listing, not a fragment. Such
+        ``protected`` names are kept. A pure Trie false-friend like 'hydrogen' (only ever produced
+        inside 'hydrogenated...') is never window-matched on its own, so it is still dropped.
         """
         wordsets = {i: i.split() for i in ings}
         keep = []
         for x in ings:
+            if x in protected:
+                keep.append(x)
+                continue
             xs = wordsets[x]
             redundant = any(
                 y != x and len(wordsets[y]) > len(xs) and _is_subseq(xs, wordsets[y])
@@ -588,15 +600,18 @@ class PostProcessor:
         raises recall on panels each engine alone garbles."""
         saved = self.segment_threshold
         union: list[str] = []
+        protected: set = set()
         try:
             for tokens, seg in sources:
                 self.segment_threshold = seg
-                union += list(self.get_ingredients(tokens).get("ingredients", []))
+                r = self.get_ingredients(tokens)
+                union += list(r.get("ingredients", []))
+                protected |= r.get("_win", set())  # span-authoritative window matches (see _drop_fragments)
         finally:
             self.segment_threshold = saved
         ings = remove_duplicates(union)
         if self.drop_fragments and ings:
-            ings = self._drop_fragments(ings)
+            ings = self._drop_fragments(ings, protected)
         return {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
 
     def get_ingredients(self, tokens: list[str]) -> list[str]:
@@ -631,11 +646,18 @@ class PostProcessor:
             corroborated = set(seg) | set(win)
             trie = [t for t in trie if len(t) > 4 or t in corroborated]
             ings = remove_duplicates(trie + seg + win)
-            res = {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
+            # Span-authoritative matches: a base name a delimiter-respecting matcher emits from its
+            # OWN span (not inside the longer name's span) is a real separate listing, so shield it
+            # from _drop_fragments. PROTECT_SRC picks the shield: 'seg' (comma/bullet segments, high
+            # precision) | 'win' (window scan) | 'both' | 'none' (legacy). Carried to
+            # get_ingredients_multi via the internal "_win" key.
+            _psrc = os.environ.get("PROTECT_SRC", "seg").lower()
+            protect = (set(seg) if _psrc in ("seg", "both") else set()) | (set(win) if _psrc in ("win", "both") else set())
+            res = {"ingredients": ings, "pollutants": self._compute_pollutants(ings), "_win": protect}
         else:
             res = self._trie_get_ingredients(tokens)
         if self.drop_fragments and res.get("ingredients"):
-            res["ingredients"] = self._drop_fragments(list(res["ingredients"]))
+            res["ingredients"] = self._drop_fragments(list(res["ingredients"]), res.get("_win", frozenset()))
             res["pollutants"] = self._compute_pollutants(res["ingredients"])
         return res
 
