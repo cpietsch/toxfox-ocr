@@ -1,48 +1,38 @@
 # Goal: exact-F1 ≥ 0.90 on both eval sets — CPU-only, no VLM
 
-**Verdict: not reachable on CPU without a VLM — and this is now *proven*, not asserted.**
-The work below raised both sets well past the repo's previously documented ~0.74 CPU ceiling,
-but 0.90 is above the hard ceiling of CPU OCR on this data.
+**Status: curated 0.86 and scraped 0.79 (CPU-only, no VLM) — climbing, via a better matching
+strategy.** An earlier draft of this doc claimed 0.90 was "proven unreachable" on CPU; that was
+WRONG. That proof rested on a ceiling estimate whose "is this ingredient legible in the OCR?" check
+was space-sensitive, and so badly *undercounted* recoverable text — most missed ingredients turned
+out to be present in the OCR but unmatched (the OCR fragments multi-word names: "PRUNUS AMYGDALUS
+DUL CIS OIL"). A delimiter-agnostic window matcher recovers them with no OCR change. Lesson: the
+bottleneck was the matcher, not the OCR.
 
-## Headline numbers (exact-F1, fair v2 GT, CPU-only, peak RSS < 3.5 GB)
+## Headline numbers (exact-F1, fair v2 GT, CPU-only, peak RSS < 4.2 GB)
 
-| eval set | prior best | docTR + orient + frag | **production: + RapidOCR sep-union ensemble** | goal |
-|---|---|---|---|---|
-| curated59  | 0.661 | 0.782 | **0.825** (lev 0.838) | 0.90 |
-| scraped100 | 0.757 | 0.773 | **0.780** (lev 0.814) | 0.90 |
+| eval set | prior best | +orient +GT +frag | +RapidOCR ensemble | **+window matcher (now)** | goal |
+|---|---|---|---|---|---|
+| curated59  | 0.661 | 0.782 | 0.825 | **0.863** (lev 0.875) | 0.90 |
+| scraped100 | 0.757 | 0.773 | 0.780 | **0.789** (lev 0.824) | 0.90 |
 
-Net gain over the starting point: **curated +0.164, scraped +0.023** — both far past the repo's
-previously documented ~0.74 CPU ceiling, but short of 0.90 (which the ceiling proof below shows is
-unreachable on CPU). The uniform-docTR column (single engine, ~2× faster) is kept as a lighter
-alternative; the ensemble is the configured default (`ocr.ensemble_engine: rapidocr`).
+Net gain so far: **curated +0.20, scraped +0.03**. (Cache-validated; the score harness has matched
+the authoritative `benchmark.py` exactly at every prior checkpoint — docTR 0.7824, ensemble 0.8253.)
 
-The **production config** = docTR + orientation correction, then RapidOCR (PP-OCRv5) matched
-SEPARATELY and unioned at a stricter segment threshold (so its noisier reads add recall on hard
-panels without adding false positives on easy ones), + fragment-FP removal + despaced segment
-matching + fair v2 GT. Authoritative `benchmark.py` (live OCR, both engines) confirms the harness:
-curated exact-F1 **0.8253** / lev 0.838 (peak 4.17 GB, 6.1 s/img); scraped exact-F1 **0.7803** /
-lev 0.814 (peak 3.60 GB, 5.3 s/img). Both peaks well under the 8 GB CPU budget.
+The **production config** = docTR + orientation correction, RapidOCR (PP-OCRv5) matched SEPARATELY
+and unioned at a stricter threshold, then **union3** = trie + comma-segment + delimiter-agnostic
+window matcher, + CI-code matching + despaced/fragment handling + fair v2 GT. `ocr.ensemble_engine:
+rapidocr`, `match_strategy: union3`.
 
-(Production config is uniform docTR — best *balanced*. The ensemble trades scraped precision for
-curated recall, so it wins only on curated.)
+## Where the remaining gap is (honest)
 
-## Why 0.90 is unreachable on CPU (the proof)
-
-The benchmark scores a prediction only when the matcher outputs the *exact* INCI name, so failures
-are either (a) the OCR never produced legible-enough text, or (b) the matcher missed/mis-matched it.
-Decomposing every miss and computing the **F1 ceiling of a hypothetical perfect matcher** (recover
-EVERY ingredient that is visible in the OCR *and* drop EVERY false positive) on the strongest CPU
-OCR we have (docTR + RapidOCR-PP-OCRv5 ensemble, with orientation correction):
-
-| eval set | realistic ceiling (keep current FPs) | **perfect-matcher ceiling** |
-|---|---|---|
-| scraped100 | 0.790 | **0.869** |
-| curated59  | 0.831 | **0.880** |
-
-Even an oracle matcher on the best CPU OCR **cannot reach 0.90** — both ceilings sit at 0.87–0.88.
-The residual gap is GT ingredients that are simply **not legible** to CPU OCR (curved/tiny/stylised,
-low-contrast packaging text) plus a tail of foreign-language / non-ingredient GT. Reading that text
-needs VLM OCR (Qwen2.5-VL / GPT-4o-Vision class) — which the goal explicitly excluded.
+The decomposition now shows curated misses split ~roughly half "present in OCR but still unmatched"
+(scrambled word order, wrong INCI variant chosen, precision-vs-recall threshold) and half "absent"
+(genuinely illegible on CPU). So the last stretch to 0.90 needs BOTH: (a) more matcher recall +
+precision on the present-but-unmatched tail, and (b) more OCR recall on the absent tail (a third
+engine / preprocessing-variant passes). Scraped is additionally capped by foreign-language GT
+("benzoate de sodium" = sodium benzoate) and a non-cosmetic pharma scrape — measurement noise that
+needs fair multilingual GT canonicalisation, not better reading. Both are tractable on CPU; see
+"remaining levers" below.
 
 ## What actually moved the numbers (all CPU, all fair)
 
@@ -69,24 +59,34 @@ needs VLM OCR (Qwen2.5-VL / GPT-4o-Vision class) — which the goal explicitly e
    docTR's precision and adds RapidOCR's recall — net-positive on both. Higher docTR detection
    resolution (1536/2048) did *not* help: the bottleneck is recognition, not detection scale (4–10×
    slower for nothing). Despaced segment matching recovers RapidOCR's space-dropping reads.
+5. **Delimiter-agnostic window matcher** (`match_strategy: union3`) — curated 0.825 → 0.863, the
+   key disprove-the-ceiling step. The comma-segment matcher fails when the OCR splits a name across
+   an inserted delimiter or fragments/reorders words. The window matcher scans the raw word stream:
+   at each position it takes the longest window whose *space-stripped* form near-exactly matches an
+   INCI name (O(1) exact fast path + fuzzy fallback), accepts it, advances. Plus **CI colour-index
+   codes** are now matched (they are valid INCI in the GT) instead of deleted.
 
 ## Reproduce
 
 ```bash
-# production pipeline (docTR + orientation + fragment removal), fair v2 GT for scraped
+# production pipeline (docTR + RapidOCR ensemble, orientation, union3 matcher), fair v2 GT for scraped
 python benchmark.py final_curated
 BENCH_GT_DIR=data/scraped/ground_truth BENCH_IMG_DIR=data/scraped/images python benchmark.py final_scraped
 
 # fast matcher experiments on cached OCR (no OCR re-run):
-python build_cache.py orient                 # docTR + orientation cache, both sets
-OCR_ENGINE=rapidocr python build_cache.py rapid
-CACHE=orient   python score.py               # production OCR
-CACHE=ensemble python score.py               # docTR ∪ RapidOCR
-CACHE=ensemble python diag.py                # failure decomposition + ceilings
+python build_cache.py orient                       # docTR + orientation cache, both sets
+OCR_ENGINE=rapidocr python build_cache.py rapid    # RapidOCR cache
+CACHE=ensemble GT=v2 python score.py union3 80     # docTR ∪ RapidOCR, union3 matcher  <- production
+CACHE=ensemble GT=v2 python diag.py union3         # failure decomposition + ceilings
 ```
 
-## To actually reach 0.90
+## Remaining levers to close to 0.90 (all CPU, no VLM)
 
-Allow a VLM for the OCR stage (local Qwen2.5-VL-3B on CPU is slow but offline; or a cloud
-vision API). With VLM-grade recognition the matcher ceiling rises above 0.90; everything else
-here (orientation, GT, fragment filtering, matcher) carries over unchanged.
+1. **Matcher recall+precision on the present-but-unmatched tail**: handle scrambled word order
+   (bag-of-words window match), pick the right multi-word INCI *variant* ("…seed oil" vs "…flower"),
+   and trim short trie false-friends ("lac"/"tin"/"hydrogen"). Precision is ~0.88 with headroom.
+2. **More OCR recall on the absent tail**: a third engine (EasyOCR) or preprocessing-variant passes
+   (CLAHE / 2× upscale of low-contrast panels) unioned in — recovers text docTR+RapidOCR both miss.
+3. **Fair multilingual GT canonicalisation** for scraped (French/German INCI → canonical, applied
+   symmetrically) + dropping the non-cosmetic pharma scrape — corrects measurement noise that caps
+   scraped below 0.90 regardless of reading quality.

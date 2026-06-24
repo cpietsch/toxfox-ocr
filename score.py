@@ -99,14 +99,15 @@ def _load_cache(key, name):
 
 
 def load(name, key, gt_mode):
-    if key == "ensemble":
+    if key in ("ensemble", "ensemble3"):
         # Match each engine's tokens SEPARATELY then union the results (see
-        # PostProcessor.get_ingredients_ensemble) -- mirrors the production pipeline. Stored as
-        # {"p": primary_tokens, "s": secondary_tokens} so score_set knows to ensemble.
-        a, _ = _load_cache("orient", name)
-        b, _ = _load_cache("rapid", name)
-        cache = {k: {"p": list(a.get(k, [])), "s": list(b.get(k, []))} for k in set(a) | set(b)}
-        cf = "ensemble(orient+rapid, sep-union)"
+        # PostProcessor.get_ingredients_multi) -- mirrors the production pipeline. Stored as
+        # {"srcs": [tokens, ...]} so score_set knows to ensemble.
+        engs = ["orient", "rapid"] + (["easy"] if key == "ensemble3" else [])
+        loaded = [_load_cache(e, name)[0] for e in engs]
+        keys = set().union(*[set(d) for d in loaded])
+        cache = {k: {"srcs": [list(d.get(k, [])) for d in loaded]} for k in keys}
+        cf = f"{key}({'+'.join(engs)}, sep-union)"
     else:
         cache, cf = _load_cache(key, name)
     gts = {}
@@ -127,8 +128,11 @@ def score_set(post, ev, cache, gts):
     for stem, gt in gts.items():
         try:
             c = cache[stem]
-            if isinstance(c, dict) and "p" in c:
-                res = post.get_ingredients_ensemble(c["p"], c["s"], sec_seg)
+            if isinstance(c, dict) and "srcs" in c:
+                srcs = c["srcs"]
+                # primary at its own segment threshold; the rest at the stricter secondary cutoff
+                sources = [(srcs[0], post.segment_threshold)] + [(s, sec_seg) for s in srcs[1:]]
+                res = post.get_ingredients_multi(sources)
             else:
                 res = post.get_ingredients(c)
             preds = norm(res.get("ingredients", []))

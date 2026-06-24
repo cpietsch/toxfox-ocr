@@ -46,9 +46,13 @@ postprocessing:
   #   union   = trie UNION segment: trie precision + segment's extra recall on garbled visible names.
   # 'union' measured best on every set (scraped 0.757, curated 0.661, NIVEA 0.794 exact-F1).
   # Override with MATCH_STRATEGY.
-  match_strategy: union
+  match_strategy: union3
   segment_threshold: 80  # rapidfuzz token_sort_ratio (0-100) cutoff for accepting a segment match
   segment_min_dropped: 5  # 'auto' uses segment only when >= this many lines preceded the marker
+  # union3 = trie + segment + window. The window matcher is a greedy longest-match despaced fuzzy
+  # scan over the OCR word stream (delimiter-agnostic), recovering names the OCR split across commas
+  # or fragmented/reordered (curated 0.837 -> 0.863). window_threshold is its rapidfuzz cutoff.
+  window_threshold: 90
 
 evaluation:
   method: levenshtein # levenstein or exact

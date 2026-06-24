@@ -357,6 +357,8 @@ class PostProcessor:
         self.match_strategy = (os.environ.get("MATCH_STRATEGY") or (_ms if isinstance(_ms, str) else "trie")).lower()
         _st = config.segment_threshold
         self.segment_threshold = float(os.environ.get("SEGMENT_THRESHOLD", _st if isinstance(_st, (int, float)) else 90))
+        _wt = config.window_threshold
+        self.window_threshold = float(os.environ.get("WINDOW_THRESHOLD", _wt if isinstance(_wt, (int, float)) else 90))
         # 'auto' routes to the segment matcher only when at least this many lines were dropped
         # before the marker (i.e. a real full-label photo, not a bare cropped panel with a header).
         _smd = config.segment_min_dropped
@@ -393,8 +395,17 @@ class PostProcessor:
             self.combined_tokens += remove_duplicates([pol.lower() for pol in self.pollutants])
         self.known_words = remove_duplicates([t.lower() for token in self.combined_tokens for t in token.split()])
         # Space-stripped vocab (index-aligned with combined_tokens) for the segment matcher's
-        # despaced fallback, which recovers space-dropping OCR reads ('ALCOHOLDENAT').
+        # despaced fallback, which recovers space-dropping/fragmenting OCR reads ('ALCOHOLDENAT',
+        # 'PRUNUS AMYGDALUS DUL CIS OIL').
         self._combined_tokens_ns = [re.sub(r"[^a-z0-9]", "", t) for t in self.combined_tokens]
+        # CI colour-index codes present in the vocab, normalised to 'ci NNNNN', for direct matching.
+        self._ci_codes = {re.sub(r"\s+", " ", t) for t in self.combined_tokens if re.fullmatch(r"ci\s*\d{4,5}", t)}
+        # Despaced -> canonical name map for the window matcher's O(1) exact fast path (clean
+        # fragmented reads like 'prunus amygdalus dul cis oil' are exact once spaces are removed).
+        self._ns_to_name = {}
+        for t, tns in zip(self.combined_tokens, self._combined_tokens_ns):
+            if len(tns) >= 6:
+                self._ns_to_name.setdefault(tns, t)
 
         os.makedirs(self.faiss_path, exist_ok=True)
         suffix = self.indexer.index_suffix
@@ -456,7 +467,14 @@ class PostProcessor:
         blob = " ".join(tokens)
         matched: list[str] = []
         for seg in re.split(r"[,;•·]", blob):
-            s = re.sub(r"\bci\s*\d{3,5}\b", " ", seg.lower())  # drop CI colour-index codes
+            seg_l = seg.lower()
+            # CI colour-index codes (ci 77491, ci 19140 ...) ARE valid INCI ingredients and appear in
+            # ground truth, so match them rather than discarding them. Tolerate the OCR c/l confusion.
+            for code in re.findall(r"\b[cс][il1|]\s*(\d{4,5})\b", seg_l):
+                name = f"ci {code}"
+                if name in self._ci_codes:
+                    matched.append(name)
+            s = re.sub(r"\b[cс][il1|]\s*\d{4,5}\b", " ", seg_l)  # remove the code, match the rest
             s = re.sub(r"[^a-z0-9/+\- ]", " ", s)  # keep INCI-ish characters only
             s = re.sub(r"\s+", " ", s).strip()
             if len(s) < 3:
@@ -468,19 +486,64 @@ class PostProcessor:
             if m and m[1] >= self.segment_threshold and len(m[0]) >= 0.6 * len(s):
                 matched.append(m[0])
                 continue
-            # Despaced fallback: some engines (RapidOCR/PP-OCRv5) drop the spaces between words
-            # ('ALCOHOLDENAT', 'CHAMOMILLARECUTITAFLOWEREXTRACT'), which token_sort can't align.
-            # Compare the space-stripped segment against the space-stripped vocab -> exact-ish recall
-            # on merged reads. Use a slightly higher cutoff (no word-order slack here, so a high
-            # ratio is strong evidence) to keep precision. Gated to merged-looking segments (<=1
-            # internal space) so it adds its extra 30k-token search only where it can help.
+            # Despaced fallback: OCR fragments multi-word names ('PRUNUS AMYGDALUS DUL CIS OIL') or
+            # drops the spaces entirely ('ALCOHOLDENAT'); token_sort can't align either. Comparing the
+            # space-stripped segment to the space-stripped vocab handles BOTH (it is near-exact once
+            # spaces are removed). High ratio + tight length ratio keep precision without the
+            # word-order slack, so the space-count gate is unnecessary.
             s_ns = s.replace(" ", "")
-            if len(s_ns) >= 8 and s.count(" ") <= 1:
+            if len(s_ns) >= 7:
                 m2 = process.extractOne(s_ns, self._combined_tokens_ns, scorer=fuzz.ratio)
-                if m2 and m2[1] >= max(self.segment_threshold, 86) and len(self._combined_tokens_ns[m2[2]]) >= 0.7 * len(s_ns):
-                    matched.append(self.combined_tokens[m2[2]])
+                if m2 and m2[1] >= max(self.segment_threshold, 88):
+                    cand_ns = self._combined_tokens_ns[m2[2]]
+                    if 0.82 <= len(cand_ns) / len(s_ns) <= 1.22:
+                        matched.append(self.combined_tokens[m2[2]])
         ingredients = remove_duplicates(matched)
         return {"ingredients": ingredients, "pollutants": self._compute_pollutants(ingredients)}
+
+    def _window_get_ingredients(self, tokens: list[str]) -> dict:
+        """Greedy longest-match fuzzy window scan over the OCR word stream (delimiter-agnostic).
+
+        The segment matcher relies on the OCR preserving commas/bullets between names. When it
+        doesn't -- a name is split across an inserted delimiter, or RapidOCR fragments/reorders words
+        ('PRUNUS AMYGDALUS DUL CIS OIL', words scattered on a curved/multi-column panel) -- the
+        segment match fails even though the characters are all present. This scans the raw word
+        sequence: at each position try the longest window (up to 6 words) whose space-stripped form
+        near-exactly matches an INCI name, accept it, and advance past it. Space-stripping makes it
+        robust to the exact word boundaries the OCR chose; the high ratio + tight length ratio keep
+        precision. CI codes are matched directly.
+        """
+        from rapidfuzz import fuzz, process
+
+        blob = " ".join(tokens).lower()
+        matched: list[str] = []
+        for code in re.findall(r"\b[cс][il1|]\s*(\d{4,5})\b", blob):
+            if f"ci {code}" in self._ci_codes:
+                matched.append(f"ci {code}")
+        words = re.sub(r"[^a-z0-9 ]", " ", blob).split()
+        i, n = 0, len(words)
+        while i < n:
+            hit = None
+            for L in range(min(6, n - i), 0, -1):  # longest window first (greedy longest match)
+                win = "".join(words[i:i + L])
+                if len(win) < 6:
+                    continue
+                exact = self._ns_to_name.get(win)  # O(1) fast path: clean fragmented read
+                if exact is not None:
+                    hit = (L, exact)
+                    break
+                m = process.extractOne(win, self._combined_tokens_ns, scorer=fuzz.ratio,
+                                       score_cutoff=self.window_threshold)
+                if m and 0.85 <= len(self._combined_tokens_ns[m[2]]) / len(win) <= 1.18:
+                    hit = (L, self.combined_tokens[m[2]])
+                    break
+            if hit:
+                matched.append(hit[1])
+                i += hit[0]
+            else:
+                i += 1
+        ings = remove_duplicates(matched)
+        return {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
 
     @staticmethod
     def _drop_fragments(ings: list[str]) -> list[str]:
@@ -515,14 +578,23 @@ class PostProcessor:
         noisier) so it contributes high-confidence names only. Measured best on both eval sets:
         docTR(primary)@80 ∪ RapidOCR(secondary)@90 -> scraped 0.782 / curated 0.827 exact-F1.
         """
-        primary = self.get_ingredients(primary_tokens).get("ingredients", [])
+        return self.get_ingredients_multi([(primary_tokens, self.segment_threshold),
+                                           (secondary_tokens, secondary_seg)])
+
+    def get_ingredients_multi(self, sources) -> dict:
+        """Generalised separate-match union over N OCR engines: sources = [(tokens, seg_thr), ...].
+        Each engine is matched in its own context at its own segment threshold, then the resulting
+        INCI names are unioned and fragment-cleaned. Adding more engines (docTR + RapidOCR + EasyOCR)
+        raises recall on panels each engine alone garbles."""
         saved = self.segment_threshold
-        self.segment_threshold = secondary_seg
+        union: list[str] = []
         try:
-            secondary = self.get_ingredients(secondary_tokens).get("ingredients", [])
+            for tokens, seg in sources:
+                self.segment_threshold = seg
+                union += list(self.get_ingredients(tokens).get("ingredients", []))
         finally:
             self.segment_threshold = saved
-        ings = remove_duplicates(list(primary) + list(secondary))
+        ings = remove_duplicates(union)
         if self.drop_fragments and ings:
             ings = self._drop_fragments(ings)
         return {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
@@ -542,13 +614,19 @@ class PostProcessor:
             strategy = "segment" if marker_idx >= self.segment_min_dropped else "trie"
         if strategy == "segment":
             res = self._segment_get_ingredients(tokens)
-        elif strategy == "union":
-            # Trie precision + the segment matcher's extra recall on garbled visible names that the
-            # Trie's exact-prefix match drops. Segment runs at its (high) threshold to limit FPs.
-            ings = remove_duplicates(
+        elif strategy == "window":
+            res = self._window_get_ingredients(tokens)
+        elif strategy in ("union", "union3"):
+            # Trie precision + segment recall on garbled visible names the Trie's exact-prefix match
+            # drops + (union3) the delimiter-agnostic window scan that assembles names the OCR split
+            # across commas or fragmented/reordered. Each matcher runs at its own precision-tuned bar.
+            ings = (
                 list(self._trie_get_ingredients(tokens)["ingredients"])
                 + list(self._segment_get_ingredients(tokens)["ingredients"])
             )
+            if strategy == "union3":
+                ings += list(self._window_get_ingredients(tokens)["ingredients"])
+            ings = remove_duplicates(ings)
             res = {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
         else:
             res = self._trie_get_ingredients(tokens)
