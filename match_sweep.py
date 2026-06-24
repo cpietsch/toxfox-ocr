@@ -1,69 +1,41 @@
 # type: ignore
-"""Fast matching experiments: score all eval sets from the cached OCR tokens (no OCR re-run).
-Edit CONFIGS to try matcher/threshold variants; each is scored on scraped / curated / realworld.
-Run ocr_cache_diag.py first to build /tmp/cache_*.json.
-"""
-import json
-from pathlib import Path
+"""Fast matching experiments on cached OCR (oriented cache + v2 GT via score.py). No OCR re-run.
+Edit CONFIGS to try matcher/threshold/filter variants; each scored on scraped + curated.
+Build the cache first (build_cache.py orient)."""
+import os
 
-import yaml
-
-from benchmark import canon
+import score as S
 from zug_toxfox.modules.evaluation import Evaluation
 from zug_toxfox.modules.postprocessing import FAISSIndexer, PostProcessor
 
-SETS = {
-    "scraped": "data/scraped/ground_truth",
-    "curated": "data/ground_truth",
-    "realworld": "data/realworld/ground_truth",
-}
-
-
-def norm(xs):
-    return sorted({canon(x) for x in xs if canon(x)})
-
-
-def load(name):
-    cache = json.load(open(f"/tmp/cache_{name}.json"))
-    gts = {}
-    for f in Path(SETS[name]).glob("*.yaml"):
-        if f.stem in cache:
-            gts[f.stem] = norm(yaml.safe_load(open(f))["INCI_list"])
-    return cache, gts
+CONFIGS = [
+    ("union@80 frag", {"match_strategy": "union", "segment_threshold": 80, "drop_fragments": True}),
+    ("union@80 nofrag", {"match_strategy": "union", "segment_threshold": 80, "drop_fragments": False}),
+    ("union@84 frag", {"match_strategy": "union", "segment_threshold": 84, "drop_fragments": True}),
+    ("union@88 frag", {"match_strategy": "union", "segment_threshold": 88, "drop_fragments": True}),
+    ("trie frag", {"match_strategy": "trie", "drop_fragments": True}),
+    ("trie nofrag", {"match_strategy": "trie", "drop_fragments": False}),
+    ("segment@84 frag", {"match_strategy": "segment", "segment_threshold": 84, "drop_fragments": True}),
+]
 
 
 def main():
+    key, gt_mode = os.environ.get("CACHE", "orient"), os.environ.get("GT", "v2")
     post = PostProcessor(FAISSIndexer())
     post.token_cleaner._symspell = post.token_cleaner._build_symspell()
     ev = Evaluation()
-    data = {n: load(n) for n in SETS}
-
-    # (label, attribute overrides applied to `post` before scoring)
-    CONFIGS = [
-        ("union@80", {"match_strategy": "union", "segment_threshold": 80}),
-        ("union@82", {"match_strategy": "union", "segment_threshold": 82}),
-        ("union@84", {"match_strategy": "union", "segment_threshold": 84}),
-        ("union@85", {"match_strategy": "union", "segment_threshold": 85}),
-        ("union@86", {"match_strategy": "union", "segment_threshold": 86}),
-    ]
-
-    print(f"{'config':28}" + "".join(f"{n[:9]:>20}" for n in SETS))
-    print(f"{'':28}" + "".join(f"{'exF1/lvF1':>20}" for _ in SETS))
+    data = {n: S.load(n, key, gt_mode) for n in S.SETS}
+    print(f"CACHE={key} GT={gt_mode}")
+    print(f"{'config':22}" + "".join(f"{n[:9]:>26}" for n in S.SETS))
+    print(f"{'':22}" + "".join(f"{'exF1/lvF1 (P/R)':>26}" for _ in S.SETS))
     for label, ov in CONFIGS:
         for k, v in ov.items():
             setattr(post, k, v)
-        row = f"{label:28}"
-        for n in SETS:
-            cache, gts = data[n]
-            exs, lvs = [], []
-            for stem, gt in gts.items():
-                try:
-                    preds = norm(post.get_ingredients(cache[stem]).get("ingredients", []))
-                except Exception:  # noqa: BLE001
-                    preds = []
-                exs.append(ev.get_metrics(preds, gt, "exact")[0])
-                lvs.append(ev.get_metrics(preds, gt, "levenshtein")[0])
-            row += f"{sum(exs)/len(exs):.3f}/{sum(lvs)/len(lvs):.3f}".rjust(20)
+        row = f"{label:22}"
+        for n in S.SETS:
+            cache, gts, _ = data[n]
+            exF1, lvF1, P, R, _ = S.score_set(post, ev, cache, gts)
+            row += f"{exF1:.3f}/{lvF1:.3f} ({P:.2f}/{R:.2f})".rjust(26)
         print(row)
 
 

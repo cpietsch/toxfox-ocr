@@ -36,19 +36,14 @@ def peak_rss_gb() -> float:
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024 / 1024
 
 
-# Multilingual synonyms collapsed to one INCI token so a panel's "Aqua/Water/Eau" (one
-# substance listed in several languages) isn't scored as several. Applied symmetrically to
-# predictions and ground truth, so it is a fair canonicalization, not score inflation.
-_WATER = {"water", "eau", "wasser", "acqua", "agua"}
-
-
-def canon(t: str) -> str:
-    t = str(t).lower().strip().replace("*", "")
-    if t in _WATER or t.startswith("aqua/") or t.startswith("aqua /"):
-        return "aqua"
-    if t == "fragrance" or t in ("parfum/fragrance", "fragrance/parfum"):
-        return "parfum"
-    return t
+# Fair, symmetric canonicalization + ground-truth re-extraction live in score.py (single source of
+# truth, reused by every experiment harness). canon() collapses multilingual water/parfum synonyms
+# and drops parentheticals/trailing punctuation; clean_gt_v2() re-extracts the scraped GT from the
+# authoritative raw OBF text with the SAME region-isolation + tokenisation the pipeline applies to
+# its predictions (the original comma-only clean_gt left the 'Ingredients:' header glued to the first
+# ingredient, scoring real matches as errors). Applied symmetrically, so this corrects measurement
+# noise, it does not inflate the score.
+from score import canon, clean_gt_v2  # noqa: E402
 
 
 def normalize_gt(items):
@@ -65,6 +60,7 @@ def main():
     # (data/realworld) can be measured separately from the curated 59-image set.
     gt_dir = Path(os.environ.get("BENCH_GT_DIR", default_config.ground_truth_path))
     img_dir = Path(os.environ.get("BENCH_IMG_DIR", default_config.image_path))
+    is_scraped = "scraped" in str(gt_dir)
 
     # Pair every ground-truth file with its image.
     cases = []
@@ -75,7 +71,12 @@ def main():
             log.warning("No image for %s, skipping", stem)
             continue
         with open(gt_file) as f:
-            gt = yaml.safe_load(f).get("INCI_list") or []
+            meta = yaml.safe_load(f)
+        # The scraped set's GT is re-extracted from the raw OBF text (header-stripped, fully
+        # delimited) -- see score.clean_gt_v2. The curated set is the maintainers' already-clean
+        # INCI_list, used verbatim. Distinguish by the eval directory so curated is never re-cleaned.
+        raw = meta.get("raw_ingredients_list")
+        gt = clean_gt_v2(raw) if (is_scraped and raw) else (meta.get("INCI_list") or [])
         cases.append((stem, img, normalize_gt(gt)))
 
     log.info("Benchmark '%s': %d cases", label, len(cases))

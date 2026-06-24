@@ -54,6 +54,13 @@ class DocTRBackend:
         det_arch = det_arch or os.environ.get("DOCTR_DET", "db_resnet50")
         reco_arch = reco_arch or os.environ.get("DOCTR_RECO", "crnn_vgg16_bn")
         self.model = ocr_predictor(det_arch=det_arch, reco_arch=reco_arch, pretrained=True)
+        # docTR resizes every page to a fixed square (default 1024) before detection, so small
+        # text on dense ingredient panels falls below the recognizable scale. Raising the detection
+        # resolution (DOCTR_DET_SIZE, e.g. 1536/2048) recovers small text at the cost of more
+        # compute/RAM. Bilinear+aspect-preserving, so it never distorts the page.
+        size = int(os.environ.get("DOCTR_DET_SIZE", "0"))
+        if size:
+            self.model.det_predictor.pre_processor.resize.size = (size, size)
 
     def readtext(self, image) -> list[list[Any]]:
         import cv2

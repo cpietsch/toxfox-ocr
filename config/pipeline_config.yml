@@ -17,6 +17,11 @@ ocr:
   # while being ~2x faster and lighter. Override at runtime with the OCR_ENGINE env var.
   engine: doctr
   doctr_reco: crnn_vgg16_bn  # crnn_vgg16_bn (fast, best) | parseq (transformer, ~tie but slower)
+  # Second OCR engine for ensembling: its matched ingredients are unioned with the primary's at a
+  # stricter segment threshold (PostProcessor.get_ingredients_ensemble). docTR(primary)+rapidocr
+  # recovers hard panels docTR garbles (curated exact-F1 0.786->0.827) at ~2x OCR cost. Set to a
+  # blank string / unset (or ENSEMBLE_OCR="") to run a single engine. Orientation applies to both.
+  ensemble_engine: rapidocr
 
 postprocessing:
   FAISSIndexer_model_name: all-MiniLM-L6-v2

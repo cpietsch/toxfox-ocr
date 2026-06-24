@@ -31,6 +31,13 @@ class Pipeline:
     def __init__(self, indexer: FAISSIndexer, evaluation: bool = False):
         self.preprocessor = PreProcessor()
         self.ocr = OCR()
+        # Optional second OCR engine for ensembling. ENSEMBLE_OCR (e.g. "rapidocr") runs a second
+        # reader whose matched ingredients are unioned with the primary's (see
+        # PostProcessor.get_ingredients_ensemble). docTR + RapidOCR measured best (curated +0.04).
+        ens = os.environ.get("ENSEMBLE_OCR") or (
+            pipeline_config.ocr.ensemble_engine if isinstance(pipeline_config.ocr.ensemble_engine, str) else None)
+        self.ocr2 = OCR(engine=ens) if ens else None
+        self.ensemble_secondary_seg = float(os.environ.get("ENSEMBLE_SECONDARY_SEG", "90"))
         self.postprocessor = PostProcessor(indexer)
         self.evaluation = Evaluation() if evaluation is True else None
 
@@ -40,6 +47,10 @@ class Pipeline:
         log.info("Detecting ingredients...")
         detected_ingredients = self.ocr.process_image(processed_image, debug=False)  # type: ignore
         log.info("Postprocessing detected ingredients")
+        if self.ocr2 is not None:
+            secondary = self.ocr2.process_image(processed_image, debug=False)  # type: ignore
+            return self.postprocessor.get_ingredients_ensemble(
+                detected_ingredients, secondary, self.ensemble_secondary_seg)
         result = self.postprocessor.get_ingredients(detected_ingredients)  # type: ignore
         return result
 

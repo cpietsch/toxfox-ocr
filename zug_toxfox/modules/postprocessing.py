@@ -25,6 +25,14 @@ _MARKER_STRIP = re.compile(
 )
 
 
+def _is_subseq(small: list[str], big: list[str]) -> bool:
+    """True if `small` appears as a contiguous run of whole words inside `big`."""
+    n, m = len(small), len(big)
+    if n == 0 or n >= m:
+        return False
+    return any(big[i:i + n] == small for i in range(m - n + 1))
+
+
 class FAISSIndexer:
     def __init__(self):
         # Allow swapping the embedding model via the EMBED_MODEL env var without editing
@@ -353,6 +361,14 @@ class PostProcessor:
         # before the marker (i.e. a real full-label photo, not a bare cropped panel with a header).
         _smd = config.segment_min_dropped
         self.segment_min_dropped = int(os.environ.get("SEGMENT_MIN_DROPPED", _smd if isinstance(_smd, (int, float)) else 5))
+        # Drop predicted ingredients that are whole-word sub-phrases of another prediction (the
+        # Trie's greedy short-fragment FPs). Precedence: DROP_FRAGMENTS env > config > on.
+        _df = config.drop_fragments
+        _env_df = os.environ.get("DROP_FRAGMENTS")
+        self.drop_fragments = (
+            _env_df.lower() not in ("0", "false", "no", "off") if _env_df is not None
+            else (_df if isinstance(_df, bool) else True)
+        )
 
         self.faiss_path = default_config.faiss_path
         self.pollutants_path = default_config.pollutants_path_simple
@@ -376,6 +392,9 @@ class PostProcessor:
         if self.detection_type in ["pollutants", "both"]:
             self.combined_tokens += remove_duplicates([pol.lower() for pol in self.pollutants])
         self.known_words = remove_duplicates([t.lower() for token in self.combined_tokens for t in token.split()])
+        # Space-stripped vocab (index-aligned with combined_tokens) for the segment matcher's
+        # despaced fallback, which recovers space-dropping OCR reads ('ALCOHOLDENAT').
+        self._combined_tokens_ns = [re.sub(r"[^a-z0-9]", "", t) for t in self.combined_tokens]
 
         os.makedirs(self.faiss_path, exist_ok=True)
         suffix = self.indexer.index_suffix
@@ -448,8 +467,65 @@ class PostProcessor:
             m = process.extractOne(s, self.combined_tokens, scorer=fuzz.token_sort_ratio)
             if m and m[1] >= self.segment_threshold and len(m[0]) >= 0.6 * len(s):
                 matched.append(m[0])
+                continue
+            # Despaced fallback: some engines (RapidOCR/PP-OCRv5) drop the spaces between words
+            # ('ALCOHOLDENAT', 'CHAMOMILLARECUTITAFLOWEREXTRACT'), which token_sort can't align.
+            # Compare the space-stripped segment against the space-stripped vocab -> exact-ish recall
+            # on merged reads. Use a slightly higher cutoff (no word-order slack here, so a high
+            # ratio is strong evidence) to keep precision. Gated to merged-looking segments (<=1
+            # internal space) so it adds its extra 30k-token search only where it can help.
+            s_ns = s.replace(" ", "")
+            if len(s_ns) >= 8 and s.count(" ") <= 1:
+                m2 = process.extractOne(s_ns, self._combined_tokens_ns, scorer=fuzz.ratio)
+                if m2 and m2[1] >= max(self.segment_threshold, 86) and len(self._combined_tokens_ns[m2[2]]) >= 0.7 * len(s_ns):
+                    matched.append(self.combined_tokens[m2[2]])
         ingredients = remove_duplicates(matched)
         return {"ingredients": ingredients, "pollutants": self._compute_pollutants(ingredients)}
+
+    @staticmethod
+    def _drop_fragments(ings: list[str]) -> list[str]:
+        """Drop a predicted ingredient that is a whole-word sub-phrase of another prediction.
+
+        The Trie's longest-prefix match greedily emits short dictionary words that are really
+        fragments of a longer name on the same panel ('hydrogen' from 'hydrogenated castor oil',
+        'alcohol' from 'cetearyl alcohol', 'betaine' from 'cocamidopropyl betaine', 'butter' from
+        '... parkii butter'). When the longer name is also predicted, the short one is a spurious
+        FP -> drop it. Word-boundary containment only, so 'aqua' is never dropped by 'aqua-something'
+        unless that token is actually present.
+        """
+        wordsets = {i: i.split() for i in ings}
+        keep = []
+        for x in ings:
+            xs = wordsets[x]
+            redundant = any(
+                y != x and len(wordsets[y]) > len(xs) and _is_subseq(xs, wordsets[y])
+                for y in ings
+            )
+            if not redundant:
+                keep.append(x)
+        return keep
+
+    def get_ingredients_ensemble(self, primary_tokens, secondary_tokens, secondary_seg: float = 90.0) -> dict:
+        """Match two OCR engines' tokens SEPARATELY and union the resulting INCI names.
+
+        Concatenating raw tokens lets the noisier engine's garble spawn false positives on panels
+        the primary engine already read cleanly. Matching each engine in its own context and unioning
+        the *results* keeps the primary's precision while adding the secondary's extra recall on
+        panels the primary garbled. The secondary runs at a stricter segment cutoff (its output is
+        noisier) so it contributes high-confidence names only. Measured best on both eval sets:
+        docTR(primary)@80 ∪ RapidOCR(secondary)@90 -> scraped 0.782 / curated 0.827 exact-F1.
+        """
+        primary = self.get_ingredients(primary_tokens).get("ingredients", [])
+        saved = self.segment_threshold
+        self.segment_threshold = secondary_seg
+        try:
+            secondary = self.get_ingredients(secondary_tokens).get("ingredients", [])
+        finally:
+            self.segment_threshold = saved
+        ings = remove_duplicates(list(primary) + list(secondary))
+        if self.drop_fragments and ings:
+            ings = self._drop_fragments(ings)
+        return {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
 
     def get_ingredients(self, tokens: list[str]) -> list[str]:
         marker_idx = -1
@@ -465,16 +541,21 @@ class PostProcessor:
             # dropped prose (not mere marker presence) is what distinguishes the two.
             strategy = "segment" if marker_idx >= self.segment_min_dropped else "trie"
         if strategy == "segment":
-            return self._segment_get_ingredients(tokens)
-        if strategy == "union":
+            res = self._segment_get_ingredients(tokens)
+        elif strategy == "union":
             # Trie precision + the segment matcher's extra recall on garbled visible names that the
             # Trie's exact-prefix match drops. Segment runs at its (high) threshold to limit FPs.
             ings = remove_duplicates(
                 list(self._trie_get_ingredients(tokens)["ingredients"])
                 + list(self._segment_get_ingredients(tokens)["ingredients"])
             )
-            return {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
-        return self._trie_get_ingredients(tokens)
+            res = {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
+        else:
+            res = self._trie_get_ingredients(tokens)
+        if self.drop_fragments and res.get("ingredients"):
+            res["ingredients"] = self._drop_fragments(list(res["ingredients"]))
+            res["pollutants"] = self._compute_pollutants(res["ingredients"])
+        return res
 
     def _trie_get_ingredients(self, tokens: list[str]) -> dict:
         cleaned_tokens = self.token_cleaner.clean_token(tokens)

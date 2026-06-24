@@ -51,7 +51,7 @@ class Evaluation:
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        tp_rate = tp / len(ground_truth)  # true positive rate
+        tp_rate = tp / len(ground_truth) if len(ground_truth) > 0 else 0  # true positive rate
         f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0  # F1 score
         return f1, tp_rate
 
