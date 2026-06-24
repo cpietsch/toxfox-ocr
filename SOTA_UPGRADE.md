@@ -189,3 +189,25 @@ to 95 % requires VLM OCR (Qwen2.5-VL / GPT-4o-Vision) + LLM dictionary correctio
 
 Reproduce: `python scrape_obf.py 100` then
 `BENCH_GT_DIR=data/scraped/ground_truth BENCH_IMG_DIR=data/scraped/images python benchmark.py scraped100`.
+
+---
+
+# CPU accuracy improvement: union matcher
+
+Diagnosing the matching headroom (GT ingredients visible in the OCR but unmatched) showed the Trie's
+exact-prefix match drops garbled-but-readable names ("sopropyl myristate", "Sodiumlauryls Sulfate")
+that a fuzzy whole-segment match recovers. But the segment matcher alone is weaker on bare panels
+(more false positives). The fix is a **union** strategy (`match_strategy: union`): run the Trie
+(precise) AND the segment matcher (recall), and union their results. The Trie's precision dominates
+while the segment pass adds the names the Trie missed.
+
+Measured (canonical, GT-normalized, CPU, peak 3.2 GB) — union@80 beats the previous `auto` on every set:
+
+| set | auto (prev) exF1/lvF1 | union@80 exF1/lvF1 |
+|---|---|---|
+| scraped (100 panels) | 0.744 / 0.769 | **0.757 / 0.790** |
+| curated (59 panels)  | 0.648 / 0.654 | **0.661 / 0.674** |
+| realworld (NIVEA)    | 0.727 / 0.727 | **0.794 / 0.794** |
+
+Tooling: `ocr_cache_diag.py` caches the OCR of every eval set to disk (matching experiments then run
+in seconds, not minutes); `match_sweep.py` scores matcher/threshold variants on the cache.

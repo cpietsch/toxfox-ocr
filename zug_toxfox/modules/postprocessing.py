@@ -466,6 +466,17 @@ class PostProcessor:
             strategy = "segment" if marker_idx >= self.segment_min_dropped else "trie"
         if strategy == "segment":
             return self._segment_get_ingredients(tokens)
+        if strategy == "union":
+            # Trie precision + the segment matcher's extra recall on garbled visible names that the
+            # Trie's exact-prefix match drops. Segment runs at its (high) threshold to limit FPs.
+            ings = remove_duplicates(
+                list(self._trie_get_ingredients(tokens)["ingredients"])
+                + list(self._segment_get_ingredients(tokens)["ingredients"])
+            )
+            return {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
+        return self._trie_get_ingredients(tokens)
+
+    def _trie_get_ingredients(self, tokens: list[str]) -> dict:
         cleaned_tokens = self.token_cleaner.clean_token(tokens)
 
         results = {"ingredients": [], "pollutants": []}

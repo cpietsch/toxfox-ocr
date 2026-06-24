@@ -1,0 +1,67 @@
+{
+  "summary": {
+    "label": "union_realworld",
+    "n_cases": 1,
+    "metrics": {
+      "exact_f1": 0.7937,
+      "exact_acc": 0.7353,
+      "lev_f1": 0.7937,
+      "lev_acc": 0.7353
+    },
+    "build_secs": 4.8,
+    "infer_secs_total": 5.5,
+    "infer_secs_mean": 5.52,
+    "peak_rss_gb": 1.62,
+    "config": {
+      "ocr_engine": "doctr",
+      "match_strategy": "union",
+      "isolate_region": true,
+      "match_backend": "faiss",
+      "typo_backend": "symspell",
+      "embed_model": "all-MiniLM-L6-v2"
+    }
+  },
+  "per_image": [
+    {
+      "id": "4006000130996",
+      "n_gt": 34,
+      "n_pred": 29,
+      "exact_f1": 0.794,
+      "exact_acc": 0.735,
+      "lev_f1": 0.794,
+      "lev_acc": 0.735,
+      "secs": 5.52,
+      "pred": [
+        "alcohol",
+        "alcohol denat.",
+        "alpha-isomethyl ionone",
+        "benzyl alcohol",
+        "bis-ethylhexyloxyphenol methoxyphenyl triazine",
+        "butylene glycol dicaprylate/dicaprate",
+        "c12-15 alkyl benzoate",
+        "c18-38 alkyl hydroxystearoyl stearate",
+        "cellulose gum",
+        "cetyl palmitate",
+        "citronellol",
+        "dibutyl adipate",
+        "diethylamine",
+        "diethylamino hydroxybenzoyl hexyl benzoate",
+        "edta",
+        "ethylhexyl triazone",
+        "glycerin",
+        "glycol",
+        "glycyrrhetinic acid",
+        "hydrogenated rapeseed oil",
+        "isopropyl palmitate",
+        "linalyl acetate",
+        "microcrystalline cellulose",
+        "parfum",
+        "phenylbenzimidazole sulfonic acid",
+        "sodium hydroxide",
+        "tocopheryl acetate",
+        "vanillin",
+        "xanthan gum"
+      ]
+    }
+  ]
+}
