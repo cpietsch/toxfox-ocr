@@ -620,13 +620,17 @@ class PostProcessor:
             # Trie precision + segment recall on garbled visible names the Trie's exact-prefix match
             # drops + (union3) the delimiter-agnostic window scan that assembles names the OCR split
             # across commas or fragmented/reordered. Each matcher runs at its own precision-tuned bar.
-            ings = (
-                list(self._trie_get_ingredients(tokens)["ingredients"])
-                + list(self._segment_get_ingredients(tokens)["ingredients"])
-            )
-            if strategy == "union3":
-                ings += list(self._window_get_ingredients(tokens)["ingredients"])
-            ings = remove_duplicates(ings)
+            trie = list(self._trie_get_ingredients(tokens)["ingredients"])
+            seg = list(self._segment_get_ingredients(tokens)["ingredients"])
+            win = list(self._window_get_ingredients(tokens)["ingredients"]) if strategy == "union3" else []
+            # Short matches (<=4 chars: 'lac','tin','carbon'(6 no),'mel') are the Trie's biggest
+            # false-friend source -- a coincidental dict word inside OCR garble. Require a short
+            # Trie-only match to be corroborated by the segment OR window matcher (which align whole
+            # names), so genuine short ingredients ('aqua','talc','mica') -- read as clean delimited
+            # tokens, hence also found by segment/window -- survive, while garble fragments drop.
+            corroborated = set(seg) | set(win)
+            trie = [t for t in trie if len(t) > 4 or t in corroborated]
+            ings = remove_duplicates(trie + seg + win)
             res = {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
         else:
             res = self._trie_get_ingredients(tokens)
