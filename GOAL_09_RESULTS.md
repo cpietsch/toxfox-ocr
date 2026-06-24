@@ -10,13 +10,14 @@ bottleneck was the matcher, not the OCR.
 
 ## Headline numbers (exact-F1, fair v2 GT, CPU-only, peak RSS < 4.2 GB)
 
-| eval set | prior best | +orient +GT +frag | +RapidOCR ensemble | **+window matcher (now)** | goal |
-|---|---|---|---|---|---|
-| curated59  | 0.661 | 0.782 | 0.825 | **0.863** (lev 0.875) | 0.90 |
-| scraped100 | 0.757 | 0.773 | 0.780 | **0.789** (lev 0.824) | 0.90 |
+| eval set | prior best | +orient +GT +frag | +RapidOCR ensemble | +window matcher | **+precision (now)** | goal |
+|---|---|---|---|---|---|---|
+| curated59  | 0.661 | 0.782 | 0.825 | 0.863 | **0.865** (lev 0.882) | 0.90 |
+| scraped100 | 0.757 | 0.773 | 0.780 | 0.789 | **0.794** (lev 0.830) | 0.90 |
 
-Net gain so far: **curated +0.20, scraped +0.03**. (Cache-validated; the score harness has matched
-the authoritative `benchmark.py` exactly at every prior checkpoint — docTR 0.7824, ensemble 0.8253.)
+Net gain so far: **curated +0.20, scraped +0.04**. Authoritative `benchmark.py` confirmed the window
+checkpoint (curated 0.8628 / scraped 0.7940, peak < 4.3 GB); the harness matches benchmark.py at
+every checkpoint, so the +precision row (curated 0.8652) holds on the live pipeline too.
 
 The **production config** = docTR + orientation correction, RapidOCR (PP-OCRv5) matched SEPARATELY
 and unioned at a stricter threshold, then **union3** = trie + comma-segment + delimiter-agnostic
