@@ -546,6 +546,36 @@ class PostProcessor:
         return {"ingredients": ings, "pollutants": self._compute_pollutants(ings)}
 
     @staticmethod
+    def _drop_prefix_false_friends(ings: list[str], tokens: list[str]) -> list[str]:
+        """Drop a single short dictionary word that appears in the OCR ONLY as the prefix of a
+        longer alphabetic run, never as a standalone token.
+
+        The Trie's longest-prefix match emits 'hydrogen' off 'HYDROGENATED CASTOR OIL' and 'phenol'
+        off 'PHENOLSULFONATE' etc. -- coincidental dictionary prefixes of a longer word the Trie
+        failed to assemble. The tell is purely textual: the matched name never occurs as a complete
+        OCR word, only embedded at the start of a longer one. A genuinely-listed short ingredient
+        ('silica', 'talc', 'alcohol', 'glycerin') appears as its own delimited token, so it is a
+        complete word and is kept. Multi-word names are never touched (they are assembled, not
+        prefix-coincidences). Conservative cap keeps long names out of scope.
+        """
+        maxlen = int(os.environ.get("PREFIX_FF_MAXLEN", "9"))
+        words: set[str] = set()
+        longer: set[str] = set()
+        for line in tokens:
+            for w in re.findall(r"[a-z0-9]+", str(line).lower()):
+                words.add(w)
+                if len(w) > 1:
+                    longer.add(w)
+        keep = []
+        for nm in ings:
+            parts = nm.split()
+            if len(parts) == 1 and 3 <= len(nm) <= maxlen and nm not in words:
+                if any(w != nm and w.startswith(nm) for w in longer):
+                    continue  # only ever a prefix of a longer OCR word -> false friend
+            keep.append(nm)
+        return keep
+
+    @staticmethod
     def _drop_fragments(ings: list[str], protected: set | frozenset = frozenset()) -> list[str]:
         """Drop a predicted ingredient that is a whole-word sub-phrase of another prediction.
 
@@ -638,14 +668,21 @@ class PostProcessor:
             trie = list(self._trie_get_ingredients(tokens)["ingredients"])
             seg = list(self._segment_get_ingredients(tokens)["ingredients"])
             win = list(self._window_get_ingredients(tokens)["ingredients"]) if strategy == "union3" else []
-            # Short matches (<=4 chars: 'lac','tin','carbon'(6 no),'mel') are the Trie's biggest
-            # false-friend source -- a coincidental dict word inside OCR garble. Require a short
-            # Trie-only match to be corroborated by the segment OR window matcher (which align whole
-            # names), so genuine short ingredients ('aqua','talc','mica') -- read as clean delimited
-            # tokens, hence also found by segment/window -- survive, while garble fragments drop.
+            # Short Trie matches are the Trie's biggest false-friend source -- a coincidental dict
+            # word read out of OCR garble, OR a dict prefix of a longer name the Trie failed to
+            # assemble ('hydrogen' from 'hydrogenated...', 'betaine' from 'cocamidopropyl betaine',
+            # 'phenol'/'butter'/'carbon'). Require a short Trie-only match to be corroborated by the
+            # segment OR window matcher (which align WHOLE delimited names), so genuine short
+            # ingredients ('aqua','talc','mica') -- read as clean delimited tokens, hence also found
+            # by segment/window -- survive, while garble fragments drop. CORROB_MAXLEN sets the
+            # length at/under which corroboration is required (default 4; raising it trims the
+            # 6-8 char false-friends at some recall risk -- swept).
             corroborated = set(seg) | set(win)
-            trie = [t for t in trie if len(t) > 4 or t in corroborated]
+            _cml = int(os.environ.get("CORROB_MAXLEN", "4"))
+            trie = [t for t in trie if len(t) > _cml or t in corroborated]
             ings = remove_duplicates(trie + seg + win)
+            if os.environ.get("PREFIX_FF", "1").lower() not in ("0", "false", "no", "off"):
+                ings = self._drop_prefix_false_friends(ings, tokens)
             # Span-authoritative matches: a base name a delimiter-respecting matcher emits from its
             # OWN span (not inside the longer name's span) is a real separate listing, so shield it
             # from _drop_fragments. PROTECT_SRC picks the shield: 'seg' (comma/bullet segments, high
