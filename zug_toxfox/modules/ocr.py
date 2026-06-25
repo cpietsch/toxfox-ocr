@@ -267,12 +267,14 @@ class OCR:
 
     def process_easyocr(self, image: np.ndarray):
         output = self._detect_oriented(image)
-        if self.engine == "doctr":
-            # docTR emits whole-line boxes already, so the correct reading order is a simple
-            # top-to-bottom (then left-to-right) sort. The DFS line-clustering below is built for
-            # EasyOCR's sub-line word boxes and mis-orders multi-region labels (it interleaves the
-            # marketing text with the ingredient panel), which both scrambles multi-word INCI names
-            # and breaks the "Ingredients:" region cut. Sort by box top-y, then left-x.
+        # docTR AND RapidOCR emit whole-LINE boxes, so the correct reading order is a simple
+        # top-to-bottom (then left-to-right) sort. The DFS line-clustering below is built for
+        # EasyOCR's sub-line WORD boxes and mis-orders whole-line boxes (it nearest-neighbour-links
+        # lines across columns/curves), which scrambles multi-word INCI names -- badly so for the
+        # higher-resolution RapidOCR-server reads ('ALCOHOL ARGANIA CETYL ROSEMARY ...'), defeating
+        # the adjacency-based segment/window matchers. Sort by box top-y, then left-x. Only EasyOCR
+        # (true word boxes) still needs the clustering. (OCR_ORDER=cluster forces the old path.)
+        if self.engine in ("doctr", "rapidocr", "paddleocr") and os.environ.get("OCR_ORDER") != "cluster":
             ordered = sorted(output, key=lambda t: (t[0][0][1], t[0][0][0])) if output else []
             return self.get_filtered_output({"polygons": [t[0] for t in ordered], "text": [t[1] for t in ordered]})
         output = self.easyocr_to_dict(ocr_output=output, paragraph=True)
