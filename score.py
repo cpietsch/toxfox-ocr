@@ -256,11 +256,15 @@ def _load_cache(key, name):
 
 
 def load(name, key, gt_mode):
-    if key in ("ensemble", "ensemble3"):
+    if key in ("ensemble", "ensemble3", "ens"):
         # Match each engine's tokens SEPARATELY then union the results (see
         # PostProcessor.get_ingredients_multi) -- mirrors the production pipeline. Stored as
-        # {"srcs": [tokens, ...]} so score_set knows to ensemble.
-        engs = ["orient", "rapid"] + (["easy"] if key == "ensemble3" else [])
+        # {"srcs": [tokens, ...]} so score_set knows to ensemble. 'ens' takes the engine list from
+        # ENS_ENGINES (comma list) so extra views (rapidserver, easy) can be A/B'd without edits.
+        if key == "ens":
+            engs = os.environ.get("ENS_ENGINES", "orient,rapid").split(",")
+        else:
+            engs = ["orient", "rapid"] + (["easy"] if key == "ensemble3" else [])
         loaded = [_load_cache(e, name)[0] for e in engs]
         keys = set().union(*[set(d) for d in loaded])
         cache = {k: {"srcs": [list(d.get(k, [])) for d in loaded]} for k in keys}
@@ -282,14 +286,36 @@ def load(name, key, gt_mode):
 def score_set(post, ev, cache, gts):
     exs, lvs, TP, FP, FN = [], [], 0, 0, 0
     sec_seg = float(os.environ.get("ENSEMBLE_SECONDARY_SEG", "90"))
+    # Optional explicit per-source segment thresholds (comma list aligned to ENS_ENGINES order),
+    # so a noisier extra view (server/easy) can run at a stricter cutoff than the primary.
+    ens_segs = os.environ.get("ENS_SEGS")
+    ens_segs = [float(x) for x in ens_segs.split(",")] if ens_segs else None
+    cond_n = int(os.environ.get("ENS_COND_N", "0"))          # add trailing sources only if primary < cond_n
+    cond_primary = int(os.environ.get("ENS_COND_PRIMARY", "2"))  # number of always-on (primary) sources
     for stem, gt in gts.items():
         try:
             c = cache[stem]
             if isinstance(c, dict) and "srcs" in c:
                 srcs = c["srcs"]
-                # primary at its own segment threshold; the rest at the stricter secondary cutoff
-                sources = [(srcs[0], post.segment_threshold)] + [(s, sec_seg) for s in srcs[1:]]
-                res = post.get_ingredients_multi(sources)
+                if ens_segs:
+                    sources = [(s, ens_segs[i] if i < len(ens_segs) else sec_seg) for i, s in enumerate(srcs)]
+                else:
+                    # primary at its own segment threshold; the rest at the stricter secondary cutoff
+                    sources = [(srcs[0], post.segment_threshold)] + [(s, sec_seg) for s in srcs[1:]]
+                if cond_n:
+                    # Conditional ensemble: the heavy/noisy trailing sources (e.g. RapidOCR-server)
+                    # are unioned ONLY when the always-on primary sources read POORLY (< cond_n
+                    # ingredients) -- the signature of a panel the primaries failed on. This keeps
+                    # the server's big recall on the hard images without paying its FP cost on the
+                    # easy ones the primaries already nail. The trigger is image-intrinsic (primary
+                    # output count), never the answers. cond_primary = #always-on sources.
+                    prim = post.get_ingredients_multi(sources[:cond_primary])
+                    if len(prim.get("ingredients", [])) < cond_n:
+                        res = post.get_ingredients_multi(sources)
+                    else:
+                        res = prim
+                else:
+                    res = post.get_ingredients_multi(sources)
             else:
                 res = post.get_ingredients(c)
             preds = norm(res.get("ingredients", []))
