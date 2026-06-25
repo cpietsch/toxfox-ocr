@@ -559,6 +559,12 @@ class PostProcessor:
         prefix-coincidences). Conservative cap keeps long names out of scope.
         """
         maxlen = int(os.environ.get("PREFIX_FF_MAXLEN", "9"))
+        # Very common standalone ingredients that are ALSO frequent prefixes/glue victims: when the
+        # OCR drops the delimiter ('PARFUMFRAGRANCE', 'AQUAGLYCERIN') the prefix test would wrongly
+        # nuke a real listing. These are near-always genuinely present on a cosmetic label, so keep.
+        # ('aqua'/'eau' deliberately NOT whitelisted: they are the dominant hallucination on anhydrous
+        # aerosols, where the prefix test correctly suppresses a spurious water read.)
+        WHITELIST = {"parfum", "talc", "mica", "silica", "urea", "bht", "bha"}
         words: set[str] = set()
         longer: set[str] = set()
         for line in tokens:
@@ -569,7 +575,8 @@ class PostProcessor:
         keep = []
         for nm in ings:
             parts = nm.split()
-            if len(parts) == 1 and 3 <= len(nm) <= maxlen and nm not in words:
+            if (len(parts) == 1 and 3 <= len(nm) <= maxlen and nm not in words
+                    and nm not in WHITELIST):
                 if any(w != nm and w.startswith(nm) for w in longer):
                     continue  # only ever a prefix of a longer OCR word -> false friend
             keep.append(nm)
