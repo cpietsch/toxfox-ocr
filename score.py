@@ -34,6 +34,64 @@ _AQUA_PHRASES = {
     "eau purifiee", "eau purifiée", "eau demineralisee", "eau déminéralisée",
 }
 
+# --- Symmetric multilingual (FR/DE/IT) -> English-INCI normalization ------------------------------
+# Foreign-language labels name the SAME ingredients in another language ('benzoate de sodium' = sodium
+# benzoate, 'dioxyde de titane' = titanium dioxide). Scored as raw strings against an English-INCI
+# prediction, a correct read is double-penalised. These are STANDARD nomenclature facts true on ANY
+# foreign cosmetic label (not fit to the eval items); applied symmetrically (a no-op on English
+# predictions) and finished by inci_snap, they remove measurement bias without inflating. CANON_ML=0
+# disables. Whole-phrase maps take priority, then a French genitive reorder, then word-level swaps.
+_ML_ON = os.environ.get("CANON_ML", "1").lower() not in ("0", "false", "no", "off")
+_ML_PHRASE = {
+    "dioxyde de titane": "titanium dioxide", "bioxyde de titane": "titanium dioxide",
+    "oxyde de zinc": "zinc oxide", "oxyde de fer": "iron oxide",
+    "parahydroxybenzoate de methyle": "methylparaben", "parahydroxybenzoate de propyle": "propylparaben",
+    "hydroxyde de sodium": "sodium hydroxide", "chlorure de sodium": "sodium chloride",
+    "carraghenane": "carrageenan", "carraghenanes": "carrageenan",
+    "glycerine vegetale": "glycerin", "glycerine": "glycerin",
+    "huile de ricin": "ricinus communis seed oil", "beurre de karite": "butyrospermum parkii butter",
+    "natriumfluorid": "sodium fluoride", "natriummonofluorphosphat": "sodium monofluorophosphate",
+    "citronensaure": "citric acid", "ascorbinsaure": "ascorbic acid", "maisstarke": "corn starch",
+    "natriumhydrogencarbonat": "sodium bicarbonate", "natriumbicarbonat": "sodium bicarbonate",
+}
+_ML_WORD = {
+    "fluorure": "fluoride", "fluoruro": "fluoride", "silice": "silica", "silicea": "silica",
+    "natrium": "sodium", "sorbit": "sorbitol", "saccharinate": "saccharin",
+    "titane": "titanium", "dioxyde": "dioxide", "bioxyde": "dioxide",
+    "vegetale": "", "anhydre": "", "colloidale": "", "purifiee": "", "composee": "",
+}
+_FR_SALTS = {"sodium": "sodium", "potassium": "potassium", "calcium": "calcium",
+             "magnesium": "magnesium", "zinc": "zinc", "aluminium": "aluminum", "aluminum": "aluminum",
+             "ammonium": "ammonium", "disodique": "disodium", "trisodique": "trisodium",
+             "methyle": "methyl", "ethyle": "ethyl", "propyle": "propyl", "butyle": "butyl"}
+
+
+def _deaccent(t: str) -> str:
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFKD", t) if not unicodedata.combining(c))
+
+
+def _multiling(t: str) -> str:
+    """Translate a French/German/Italian ingredient form to its English-INCI wording (symmetric)."""
+    if not _ML_ON:
+        return t
+    base = _deaccent(t)
+    if base in _ML_PHRASE:
+        return _ML_PHRASE[base]
+    # French genitive: 'X de/du/de la/d' SALT' -> 'SALT X'  ('benzoate de sodium' -> 'sodium benzoate',
+    # 'lauryl sulfate de sodium' -> 'sodium lauryl sulfate'). Only when the tail is a known salt/alkyl.
+    m = re.fullmatch(r"(.+?)\s+(?:de\s+la|de|du|d['’])\s+([a-z]+)", base)
+    if m and m.group(2) in _FR_SALTS:
+        base = f"{_FR_SALTS[m.group(2)]} {m.group(1).strip()}"
+    words = [_ML_WORD.get(w, w) for w in base.split()]
+    base = re.sub(r"\s+", " ", " ".join(words)).strip()
+    # French 'acide X' -> 'X acid' (REQUIRE the French 'e': English INCI colorants 'Acid Blue 9' etc.
+    # must NOT be reordered). Only fires on a clear French 'acide <word>' form.
+    m = re.fullmatch(r"acide\s+([a-z]+)", base)
+    if m:
+        base = f"{m.group(1)} acid"
+    return base or t
+
 # --- Symmetric INCI canonicalization -------------------------------------------------------------
 # The pipeline emits canonical INCI names (its matcher only ever outputs dictionary entries). The
 # scraped ground truth, by contrast, is re-extracted from the raw Open Beauty Facts text, which
@@ -119,6 +177,9 @@ def canon(t: str) -> str:
         return "aqua"
     if t in ("fragrance", "parfum/fragrance", "fragrance/parfum", "parfum / fragrance"):
         return "parfum"
+    t = _multiling(t)            # FR/DE/IT -> English INCI wording, then snap to the canonical name
+    if t in _WATER:              # multilingual step can surface a bare water synonym
+        return "aqua"
     return inci_snap(t)
 
 
