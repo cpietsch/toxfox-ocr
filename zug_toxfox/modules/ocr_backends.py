@@ -21,9 +21,21 @@ class RapidOCRBackend:
     """
 
     def __init__(self):
+        import os
+
         from rapidocr import RapidOCR
 
-        self.engine = RapidOCR()
+        # PP-OCRv4 ships BOTH 'mobile' (fast, default) and 'server' (markedly more accurate, less
+        # garble on dense/curved INCI text) det+rec models, all CPU ONNX. RAPIDOCR_MODEL_TYPE=server
+        # swaps to the heavier models -- a fast-on-CPU recognition upgrade short of any VLM.
+        mtype = os.environ.get("RAPIDOCR_MODEL_TYPE", "mobile").lower()
+        if mtype == "server":
+            from rapidocr.utils.typings import ModelType
+
+            self.engine = RapidOCR(params={"Det.model_type": ModelType.SERVER,
+                                           "Rec.model_type": ModelType.SERVER})
+        else:
+            self.engine = RapidOCR()
 
     def readtext(self, image) -> list[list[Any]]:
         res = self.engine(image)
